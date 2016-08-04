@@ -208,32 +208,48 @@ function containsObject(list, obj) {
 function setupBuffers(){
 	vertexPositionBuffer = gl.createBuffer();
 	gl.bindBuffer(gl.ARRAY_BUFFER, vertexPositionBuffer);
-	var vertexPosition = new Array();
+	var vertexPosition = new Float32Array(12*maxNPix);
 	var facesVec3Array;
 
 	for (i=0; i < maxNPix; i++){
 		facesVec3Array = new Array();
 		facesVec3Array = healpix.getBoundaries(i);
+
+		vertexPosition[12*i] = facesVec3Array[0].x ;
+		vertexPosition[12*i+1] = facesVec3Array[0].y;
+		vertexPosition[12*i+2] = facesVec3Array[0].z;
 		
-		vertexPosition.push(facesVec3Array[0].x);
-		vertexPosition.push(facesVec3Array[0].y);
-		vertexPosition.push(facesVec3Array[0].z);
+		vertexPosition[12*i+3] = facesVec3Array[1].x;
+		vertexPosition[12*i+4] = facesVec3Array[1].y;
+		vertexPosition[12*i+5] = facesVec3Array[1].z;
 		
-		vertexPosition.push(facesVec3Array[1].x);
-		vertexPosition.push(facesVec3Array[1].y);
-		vertexPosition.push(facesVec3Array[1].z);
+		vertexPosition[12*i+6] = facesVec3Array[2].x;
+		vertexPosition[12*i+7] = facesVec3Array[2].y;
+		vertexPosition[12*i+8] = facesVec3Array[2].z;
 		
-		vertexPosition.push(facesVec3Array[2].x);
-		vertexPosition.push(facesVec3Array[2].y);
-		vertexPosition.push(facesVec3Array[2].z);
+		vertexPosition[12*i+9] = facesVec3Array[3].x;
+		vertexPosition[12*i+10] = facesVec3Array[3].y;
+		vertexPosition[12*i+11] = facesVec3Array[3].z;
 		
-		vertexPosition.push(facesVec3Array[3].x);
-		vertexPosition.push(facesVec3Array[3].y);
-		vertexPosition.push(facesVec3Array[3].z);
+// 		vertexPosition.push(facesVec3Array[0].x);
+// 		vertexPosition.push(facesVec3Array[0].y);
+// 		vertexPosition.push(facesVec3Array[0].z);
+		
+// 		vertexPosition.push(facesVec3Array[1].x);
+// 		vertexPosition.push(facesVec3Array[1].y);
+// 		vertexPosition.push(facesVec3Array[1].z);
+		
+// 		vertexPosition.push(facesVec3Array[2].x);
+// 		vertexPosition.push(facesVec3Array[2].y);
+// 		vertexPosition.push(facesVec3Array[2].z);
+		
+// 		vertexPosition.push(facesVec3Array[3].x);
+// 		vertexPosition.push(facesVec3Array[3].y);
+// 		vertexPosition.push(facesVec3Array[3].z);
 		
 	}
 	
-	gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(vertexPosition), gl.STATIC_DRAW);
+	gl.bufferData(gl.ARRAY_BUFFER, vertexPosition, gl.STATIC_DRAW);
 	vertexPositionBuffer.itemSize = 3;
 	vertexPositionBuffer.numberOfItems = vertexPosition.length; 
 	
@@ -386,8 +402,6 @@ function viewToWorld(vx, vy, rect){
 }
 
 function worldToModel(xy){
-// 	var z = Math.sqrt(1 - xy[0]*xy[0] - xy[1]*xy[1]);
-// 	return [xy[0], xy[1], z];
 	var x = Math.sqrt(1 - xy[0]*xy[0] - xy[1]*xy[1]);
 	var y = xy[0];
 	var z = xy[1];
