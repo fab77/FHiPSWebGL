@@ -16,26 +16,34 @@
 
 <script id="shader-vs" type="x-shader/x-vertex">
 	attribute vec3 aVertexPosition;
-	attribute vec4 aVertexColor;
+	attribute vec2 aTextureCoordinates;
+
+	//attribute vec4 aVertexColor;
   
 	uniform mat4 uMVMatrix;
 	uniform mat4 uPMatrix;
   
-	varying vec4 vColor;
-  
+	//varying vec4 vColor;
+  	varying vec2 vTextureCoordinates;
+
 	void main() {
 		gl_Position = uPMatrix * uMVMatrix * vec4(aVertexPosition, 1.0);
-		vColor = aVertexColor;
+		//vColor = aVertexColor;
+		vTextureCoordinates = aTextureCoordinates;
 	}
 </script>
 
 <script id="shader-fs" type="x-shader/x-fragment">
-  precision mediump float;
+  	precision mediump float;
   
-  varying vec4 vColor;
-  void main() {
-    gl_FragColor = vColor;   
-  } 
+	varying vec2 vTextureCoordinates;
+	uniform sampler2D uSampler;
+
+  	//varying vec4 vColor;
+  	void main() {
+    	//gl_FragColor = vColor;
+		gl_FragColor = texture2D(uSampler, vTextureCoordinates); 
+  	} 
 </script>
 
 <script type="text/javascript">
@@ -45,18 +53,13 @@ var nside = Math.pow(2, norder);
 var healpix = new Healpix(nside);
 var maxNPix = healpix.getNPix();
 
-var vertexIndexBuffer;
-var vertexPositionBuffer;
+console.log("maxNPix: "+maxNPix);
 
 var gl;
 var canvas;
-var shaderProgram;
-
-var modelViewMatrix;
-var projectionMatrix;
-var modelViewMatrixStack;
 
 var pwgl = {};
+pwgl.ongoingImageLoads = [];
 
 function initWebGL(canvas) {
     gl = null;
@@ -136,82 +139,65 @@ function loadShaderFromDOM(id) {
 
 
 
-function draw(currentTime){
+function draw(){
 	pwgl.requestId = requestAnimationFrame(draw);
-
-	if (currentTime === 'undefined'){
-		currentTime = Date.now();
-	}
-// 	console.log(currentTime);
-// console.log(pwgl.previousFrameTimeStamp);
-// 	console.log(currentTime - pwgl.previousFrameTimeStamp);
-	// Update FPS if a second or more has passed since last update
-	if ((currentTime - pwgl.previousFrameTimeStamp) >= 1000){
-		console.log("b");
-		pwgl.fpsCounter.innerHTML = pwgl.nbrOfFrameForFPS;
-		pwgl.nbrOfFrameForFPS = 0;
-		pwgl.previousFrameTimeStamp = currentTime;
-	}
-	
-	
 	
 	gl.viewport(0, 0, gl.viewportWidth, gl.viewportHeight);
 	gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
 	
 	
-	mat4.ortho(-1, 1, -1, 1, -1.1, 100, projectionMatrix);
+	mat4.ortho(-1, 1, -1, 1, -1.1, 100, pwgl.projectionMatrix);
 	
 // 	mat4.perspective(45, gl.viewportWidth / gl.viewportHeight, 
 // 	                 0.1, 100.0, projectionMatrix);
-	mat4.identity(modelViewMatrix);
+	mat4.identity(pwgl.modelViewMatrix);
 // 	mat4.lookAt([0, 0, -5],[0, 0, 0], [0, 1,0], modelViewMatrix);
 
 	uploadModelViewMatrixToShader();
 	uploadProjectionMatrixToShader();
+	gl.uniform1i(pwgl.uniformSamplerLoc, 0);
 	
 	// Disable vertex attrib array and use constant color for the cube.
-    gl.disableVertexAttribArray(shaderProgram.vertexColorAttribute);
+//     gl.disableVertexAttribArray(shaderProgram.vertexColorAttribute);
     // Set color
-    gl.vertexAttrib4f(shaderProgram.vertexColorAttribute, 0.0, 0.0, 1.0, 1.0);
+//     gl.vertexAttrib4f(shaderProgram.vertexColorAttribute, 0.0, 0.0, 1.0, 1.0);
     
-    gl.bindBuffer(gl.ARRAY_BUFFER, vertexPositionBuffer);
-    gl.vertexAttribPointer(shaderProgram.vertexPositionAttribute, 
-                         vertexPositionBuffer.itemSize, 
-                         gl.FLOAT, false, 0, 0);
+    gl.bindBuffer(gl.ARRAY_BUFFER, pwgl.vertexPositionBuffer);
+    gl.vertexAttribPointer(pwgl.vertexPositionAttributeLoc,
+    					pwgl.VERTEX_POS_BUF_ITEM_SIZE, 
+                       	gl.FLOAT, false, 0, 0);
+    
+    gl.bindBuffer(gl.ARRAY_BUFFER, pwgl.vertexTextureCoordinateBuffer);
+    gl.vertexAttribPointer(pwgl.vertexTextureAttributeLoc,
+    					pwgl.VERTEX_TEX_COORD_BUF_ITEM_SIZE, 
+                       	gl.FLOAT, false, 0, 0);
+    gl.activeTexture(gl.TEXTURE0);
+    for (var i=0;i<maxNPix;i++){
+    	gl.bindTexture(gl.TEXTURE_2D, pwgl.texturesArray[i]);	
+    }    
+    
+    gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, pwgl.vertexIndexBuffer);
         
-    gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, vertexIndexBuffer);
-        
-    gl.drawElements(gl.TRIANGLES, vertexIndexBuffer.numberOfItems, 
+    gl.drawElements(gl.TRIANGLES, pwgl.VERTEX_INDEX_BUF_NUM_ITEMS, 
                   gl.UNSIGNED_SHORT, 0);
     
-    pwgl.nbrOfFrameForFPS++;
 }
 
 function uploadModelViewMatrixToShader() {
-	gl.uniformMatrix4fv(shaderProgram.uniformMVMatrix, false, modelViewMatrix);
+	gl.uniformMatrix4fv(pwgl.uniformMVMatrixLoc, false, pwgl.modelViewMatrix);
 }
 
 function uploadProjectionMatrixToShader() {
-	gl.uniformMatrix4fv(shaderProgram.uniformProjMatrix, false, projectionMatrix);
-}
-	
-function containsObject(list, obj) {
-    var i;
-    for (i = 0; i < list.length; i=i+3) {
-        if ( list[i] === obj.x && list[i+1] === obj.y && list[i+2] === obj.z) {
-            return i;
-        }
-    }
-    return -1;
+	gl.uniformMatrix4fv(pwgl.uniformProjMatrixLoc, false, pwgl.projectionMatrix);
 }
 
 function setupBuffers(){
-	vertexPositionBuffer = gl.createBuffer();
-	gl.bindBuffer(gl.ARRAY_BUFFER, vertexPositionBuffer);
+	pwgl.vertexPositionBuffer = gl.createBuffer();
+	gl.bindBuffer(gl.ARRAY_BUFFER, pwgl.vertexPositionBuffer);
 	var vertexPosition = new Float32Array(12*maxNPix);
 	var facesVec3Array;
 
-	for (i=0; i < maxNPix; i++){
+	for (var i=0; i < maxNPix; i++){
 		facesVec3Array = new Array();
 		facesVec3Array = healpix.getBoundaries(i);
 
@@ -230,125 +216,169 @@ function setupBuffers(){
 		vertexPosition[12*i+9] = facesVec3Array[3].x;
 		vertexPosition[12*i+10] = facesVec3Array[3].y;
 		vertexPosition[12*i+11] = facesVec3Array[3].z;
-		
-// 		vertexPosition.push(facesVec3Array[0].x);
-// 		vertexPosition.push(facesVec3Array[0].y);
-// 		vertexPosition.push(facesVec3Array[0].z);
-		
-// 		vertexPosition.push(facesVec3Array[1].x);
-// 		vertexPosition.push(facesVec3Array[1].y);
-// 		vertexPosition.push(facesVec3Array[1].z);
-		
-// 		vertexPosition.push(facesVec3Array[2].x);
-// 		vertexPosition.push(facesVec3Array[2].y);
-// 		vertexPosition.push(facesVec3Array[2].z);
-		
-// 		vertexPosition.push(facesVec3Array[3].x);
-// 		vertexPosition.push(facesVec3Array[3].y);
-// 		vertexPosition.push(facesVec3Array[3].z);
-		
+	
 	}
-	
 	gl.bufferData(gl.ARRAY_BUFFER, vertexPosition, gl.STATIC_DRAW);
-	vertexPositionBuffer.itemSize = 3;
-	vertexPositionBuffer.numberOfItems = vertexPosition.length; 
+	pwgl.VERTEX_POS_BUF_ITEM_SIZE = 3;
+	pwgl.VERTEX_POS_BUF_NUM_ITEMS = vertexPosition.length; 
 	
+	
+    pwgl.vertexTextureCoordinateBuffer = gl.createBuffer();
+    gl.bindBuffer(gl.ARRAY_BUFFER, pwgl.vertexTextureCoordinateBuffer);
+    var textureCoordinates = new Float32Array(8*maxNPix);
+    for (var i=0; i < maxNPix; i++){
+    	// [1, 0],[1, 1],[0, 1],[0, 0]
+    	textureCoordinates[8*i] = 1.0;
+    	textureCoordinates[8*i+1] = 0.0;
+    	textureCoordinates[8*i+2] = 1.0;
+    	textureCoordinates[8*i+3] = 1.0;
+    	textureCoordinates[8*i+4] = 0.0;
+    	textureCoordinates[8*i+5] = 1.0;
+    	textureCoordinates[8*i+6] = 0.0;
+    	textureCoordinates[8*i+7] = 0.0;
+    }
+    gl.bufferData(gl.ARRAY_BUFFER, textureCoordinates, gl.STATIC_DRAW);
+    pwgl.VERTEX_TEX_COORD_BUF_ITEM_SIZE = 2;
+    pwgl.VERTEX_TEX_COORD_BUF_NUM_ITEMS = textureCoordinates.length;
     
-    vertexIndexBuffer = gl.createBuffer();
-    gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, vertexIndexBuffer);
-    var vertexIndices = new Array();;
+	
+	pwgl.vertexIndexBuffer = gl.createBuffer();
+    gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, pwgl.vertexIndexBuffer);
+    var vertexIndices = new Uint16Array(6*maxNPix);
     var baseFaceIndex = 0; 
-    for (j=0; j< vertexPosition.length; j=j+12){
-    	vertexIndices.push(baseFaceIndex);
-    	vertexIndices.push(baseFaceIndex+1);
-    	vertexIndices.push(baseFaceIndex+2);
+    for (var j=0; j< maxNPix; j++){
+    	vertexIndices[6*j] = baseFaceIndex;
+    	vertexIndices[6*j+1] = baseFaceIndex + 1;
+    	vertexIndices[6*j+2] = baseFaceIndex + 2;
     	
-    	vertexIndices.push(baseFaceIndex);
-    	vertexIndices.push(baseFaceIndex+2);
-    	vertexIndices.push(baseFaceIndex+3);
+    	vertexIndices[6*j+3] = baseFaceIndex;
+    	vertexIndices[6*j+4] = baseFaceIndex + 2;
+    	vertexIndices[6*j+5] = baseFaceIndex + 3;
     	
     	baseFaceIndex = baseFaceIndex+4;
     }
-    gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, new Uint16Array(vertexIndices), gl.STATIC_DRAW);
-    vertexIndexBuffer.itemSize = 1;
-    vertexIndexBuffer.numberOfItems = vertexIndices.length;
+    gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, vertexIndices, gl.STATIC_DRAW);
+    pwgl.VERTEX_INDEX_BUF_ITEM_SIZE = 1;
+    pwgl.VERTEX_INDEX_BUF_NUM_ITEMS = vertexIndices.length;
 
 	
+    console.log(textureCoordinates);
     console.log(vertexPosition);
-	console.log(vertexIndices);
-
+    console.log(vertexIndices);
+    
+	
+    console.log(textureCoordinates.length);
 	console.log(vertexPosition.length);
 	console.log(vertexIndices.length);
 	
-	console.log(vertexPositionBuffer);
-	console.log(vertexIndexBuffer);
+}
+
+function setupTextures(){
+	pwgl.texturesArray = [];
+	for (var i=0; i<maxNPix;i++){
+		pwgl.texturesArray[i] = gl.createTexture();
+		loadImageForTexture(i, pwgl.texturesArray[i]);
+	}
+}
+
+function loadImageForTexture(i, texture){
+	var image = new Image();
+	image.onload = function(){
+		pwgl.ongoingImageLoads.splice(pwgl.ongoingImageLoads.indexOf(image), 1);
+		textureFinishedLoading(image, texture);
+	}
+	pwgl.ongoingImageLoads.push(image);
+	image.crossOrigin = "anonymous";
+	image.src="http://skies.esac.esa.int/DSSColor/Norder3/Dir0/Npix"+i+".jpg";
+}
+
+function textureFinishedLoading(image, texture){
+	gl.bindTexture(gl.TEXTURE_2D, texture);
+	gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, true);
 	
+	gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, image);
 	
+	gl.generateMipmap(gl.TEXTURE_2D);
+	
+// 	gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+// 	gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+	
+// 	gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.MIRRORED_REPEAT);
+// 	gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.MIRRORED_REPEAT);
+	
+// 	gl.bindTexture(gl.TEXTURE_2D, null);
 }
 
 function setupShaders() {
 	  var vertexShader = loadShaderFromDOM("shader-vs");
 	  var fragmentShader = loadShaderFromDOM("shader-fs");
 	  
-	  shaderProgram = gl.createProgram();
+	  var shaderProgram = gl.createProgram();
 	  gl.attachShader(shaderProgram, vertexShader);
 	  gl.attachShader(shaderProgram, fragmentShader);
 	  gl.linkProgram(shaderProgram);
 
-	  if (!gl.getProgramParameter(shaderProgram, gl.LINK_STATUS)) {
+	  if (!gl.getProgramParameter(shaderProgram, gl.LINK_STATUS) && !gl.isContextLost()) {
 	    alert("Failed to setup shaders");
 	  }
 
 	  gl.useProgram(shaderProgram);
 	  
-	  shaderProgram.vertexPositionAttribute = gl.getAttribLocation(shaderProgram, "aVertexPosition"); 
-	  shaderProgram.vertexColorAttribute = gl.getAttribLocation(shaderProgram, "aVertexColor");
-	  shaderProgram.uniformMVMatrix = gl.getUniformLocation(shaderProgram, "uMVMatrix");
-	  shaderProgram.uniformProjMatrix = gl.getUniformLocation(shaderProgram, "uPMatrix");
+	  pwgl.vertexPositionAttributeLoc = gl.getAttribLocation(shaderProgram, "aVertexPosition"); 
+	  pwgl.vertexTextureAttributeLoc = gl.getAttribLocation(shaderProgram, "aTextureCoordinates");
+	  pwgl.uniformMVMatrixLoc = gl.getUniformLocation(shaderProgram, "uMVMatrix");
+	  pwgl.uniformProjMatrixLoc = gl.getUniformLocation(shaderProgram, "uPMatrix");
+	  pwgl.uniformSamplerLoc = gl.getUniformLocation(shaderProgram, "uPMatrix");
 
-	  gl.enableVertexAttribArray(shaderProgram.vertexPositionAttribute);
+	  gl.enableVertexAttribArray(pwgl.vertexPositionAttributeLoc);
+	  gl.enableVertexAttribArray(pwgl.vertexTextureAttributeLoc);
 
-	  modelViewMatrix = mat4.create(); 
-	  projectionMatrix = mat4.create();
-	  modelViewMatrixStack = new Array();;
+	  pwgl.modelViewMatrix = mat4.create(); 
+	  pwgl.projectionMatrix = mat4.create();
+	  pwgl.modelViewMatrixStack = [];
 }
 
-function setupTextures(){
-	console.log("setupTextures() not yet implemented");
-}
+
 
 function handleContextLost(event){
 	event.preventDefault();
 	cancelRequestAnimFrame(pwgl.requestId);
+	
+	// Ignore all ongoing image load by removing
+	// their onload handler
+	for (var i=0; i < pwgl.ongoingImageLoads.length; i++){
+		pwgl.ongoingImageLoads[i] = undefined;
+	}
+	pwgl.ongoingImageLoads = [];
 }
 
 function handleContextRestored(event){
 	setupShaders(); 
-	  setupBuffers();
-	  setupTextures();
-	  gl.clearColor(1.0, 1.0, 1.0, 1.0);
-	  pwgl.requestId = requestAnimationFrame(draw, canvas);
+	setupBuffers();
+	setupTextures();
+// 	gl.clearColor(0.0, 0.0, 0.0, 1.0);
+	gl.clearColor(1.0, 1.0, 1.0, 1.0);
+	gl.enable(gl.DEPTH_TEST);
+	pwgl.requestId = requestAnimationFrame(draw, canvas);
 }
 
 
 function startup() {
 	canvas = document.getElementById("myGLCanvas");
+	
 	canvas.addEventListener('webglcontextlost', handleContextLost, false);
 	canvas.addEventListener('webglcontextrestored', handleContextRestored, false);
 	
-	gl = WebGLDebugUtils.makeDebugContext(createGLContext(canvas));
+	gl = createGLContext(canvas);
 	setupShaders(); 
 	setupBuffers();
 	setupTextures();
+// 	gl.clearColor(0.0, 0.0, 0.0, 1.0);
 	gl.clearColor(1.0, 1.0, 1.0, 1.0);
 	gl.enable(gl.DEPTH_TEST);
 	
-	pwgl.nbrOfFrameForFPS = 0;
-	pwgl.previousFrameTimeStamp = Date.now();
-	pwgl.fpsCounter = document.getElementById("fps");
-	
 	var coordsDiv = document.getElementById('coords');
-canvas.onmousedown = function(ev) {   // Mouse is pressed
+	canvas.onmousedown = function(ev) {   // Mouse is pressed
 	    
 	    var vx = ev.clientX; // x coordinate of a mouse pointer
 	    var vy = ev.clientY; // y coordinate of a mouse pointer
