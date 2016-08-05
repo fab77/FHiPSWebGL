@@ -167,19 +167,26 @@ function draw(){
     					pwgl.VERTEX_POS_BUF_ITEM_SIZE, 
                        	gl.FLOAT, false, 0, 0);
     
+    
+    
     gl.bindBuffer(gl.ARRAY_BUFFER, pwgl.vertexTextureCoordinateBuffer);
     gl.vertexAttribPointer(pwgl.vertexTextureAttributeLoc,
     					pwgl.VERTEX_TEX_COORD_BUF_ITEM_SIZE, 
                        	gl.FLOAT, false, 0, 0);
-    gl.activeTexture(gl.TEXTURE0);
-    for (var i=0;i<maxNPix;i++){
-    	gl.bindTexture(gl.TEXTURE_2D, pwgl.texturesArray[i]);	
-    }    
     
     gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, pwgl.vertexIndexBuffer);
+    
+    gl.activeTexture(gl.TEXTURE0);
+    for (var i=0;i<maxNPix;i++){
+    	gl.bindTexture(gl.TEXTURE_2D, pwgl.texturesArray[i]);
+        gl.drawElements(gl.TRIANGLES, 6, 
+                      gl.UNSIGNED_SHORT, 12*i);
+    }    
+    
+//     gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, pwgl.vertexIndexBuffer);
         
-    gl.drawElements(gl.TRIANGLES, pwgl.VERTEX_INDEX_BUF_NUM_ITEMS, 
-                  gl.UNSIGNED_SHORT, 0);
+//     gl.drawElements(gl.TRIANGLES, pwgl.VERTEX_INDEX_BUF_NUM_ITEMS, 
+//                   gl.UNSIGNED_SHORT, 0);
     
 }
 
@@ -301,12 +308,16 @@ function textureFinishedLoading(image, texture){
 	gl.generateMipmap(gl.TEXTURE_2D);
 	
 // 	gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
-	gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+// 	gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+	gl.texParameteri(gl.TEXTURE_2D,
+            gl.TEXTURE_MAG_FILTER, gl.NEAREST);
+         gl.texParameteri(gl.TEXTURE_2D,
+            gl.TEXTURE_MIN_FILTER, gl.NEAREST);
 	
 // 	gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.MIRRORED_REPEAT);
 // 	gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.MIRRORED_REPEAT);
 	
-// 	gl.bindTexture(gl.TEXTURE_2D, null);
+	gl.bindTexture(gl.TEXTURE_2D, null);
 }
 
 function setupShaders() {
@@ -370,10 +381,9 @@ function startup() {
 	canvas.addEventListener('webglcontextrestored', handleContextRestored, false);
 	
 	gl = createGLContext(canvas);
-	setupShaders(); 
+	setupShaders();
 	setupBuffers();
 	setupTextures();
-// 	gl.clearColor(0.0, 0.0, 0.0, 1.0);
 	gl.clearColor(1.0, 1.0, 1.0, 1.0);
 	gl.enable(gl.DEPTH_TEST);
 	
@@ -432,9 +442,14 @@ function viewToWorld(vx, vy, rect){
 }
 
 function worldToModel(xy){
-	var x = Math.sqrt(1 - xy[0]*xy[0] - xy[1]*xy[1]);
-	var y = xy[0];
-	var z = xy[1];
+// 	var x = Math.sqrt(1 - xy[0]*xy[0] - xy[1]*xy[1]);
+// 	var y = xy[0];
+// 	var z = xy[1];
+	
+	var x = xy[0];
+	var y = xy[1];
+	var z = Math.sqrt(1 - xy[0]*xy[0] - xy[1]*xy[1]);
+	
 	return [x, y, z];
 }
 
@@ -456,7 +471,7 @@ function modelToRaDec(xyz){
 
 <body onload="startup();">
 	<div style="border: 1px solid black; margin: 40px; position: absolute;" >
-  		<canvas id="myGLCanvas" width="500" height="500"></canvas>
+  		<canvas id="myGLCanvas" width="800" height="800"></canvas>
   	</div>
   	<div id="fps-counter">
   		FPS: <span id="fps">--</span>
