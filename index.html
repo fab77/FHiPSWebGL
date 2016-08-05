@@ -464,7 +464,7 @@ function modelToRaDec(xyz){
 	}
 	dec = Math.atan2(Math.sqrt(xyz[0]*xyz[0] + xyz[1]*xyz[1]), xyz[2]);
 
-	return [ra* 180 / Math.PI, dec* 180 / Math.PI];
+	return [ra* 180 / Math.PI, 90 - dec* (180 / Math.PI)];
 }
 </script>
 </head>
