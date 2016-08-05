@@ -48,7 +48,6 @@
 
 <script type="text/javascript">
 
-var fullZoom = true;
 var norder = 3;
 var nside = Math.pow(2, norder);
 var healpix = new Healpix(nside);
@@ -168,24 +167,12 @@ function draw(){
     gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, pwgl.vertexIndexBuffer);
     
     gl.activeTexture(gl.TEXTURE0);
-    
-    if (fullZoom){
-    	gl.bindTexture(gl.TEXTURE_2D, pwgl.texturesArray[0]);
-    	for (var i=0;i<maxNPix;i++){
-//         	gl.drawElements(gl.TRIANGLES, 6, 
-//                     gl.UNSIGNED_SHORT, 12*i);
-        	gl.drawElements(gl.TRIANGLES, 12, 
-                    gl.UNSIGNED_SHORT, 24*i);
-        }	
-    }else{
-    	for (var i=0;i<maxNPix;i++){
-        	gl.bindTexture(gl.TEXTURE_2D, pwgl.texturesArray[i]);
-//         	gl.drawElements(gl.TRIANGLES, 6, 
-//                     gl.UNSIGNED_SHORT, 12*i);
-        	gl.drawElements(gl.TRIANGLES, 12, 
-                    gl.UNSIGNED_SHORT, 24*i);
-        }	
+    for (var i=0;i<maxNPix;i++){
+    	gl.bindTexture(gl.TEXTURE_2D, pwgl.texturesArray[i]);
+        gl.drawElements(gl.TRIANGLES, 6, 
+                      gl.UNSIGNED_SHORT, 12*i);
     }
+    
 }
 
 function uploadModelViewMatrixToShader() {
@@ -199,38 +186,30 @@ function uploadProjectionMatrixToShader() {
 function setupBuffers(){
 	pwgl.vertexPositionBuffer = gl.createBuffer();
 	gl.bindBuffer(gl.ARRAY_BUFFER, pwgl.vertexPositionBuffer);
-	var vertexPosition = new Float32Array(15*maxNPix);
+	var vertexPosition = new Float32Array(12*maxNPix);
 	var facesVec3Array;
-	var p = [];
-	var epsilon = 0.004;
+
 	for (var i=0; i < maxNPix; i++){
 		facesVec3Array = new Array();
 		facesVec3Array = healpix.getBoundaries(i);
 
-		vertexPosition[15*i] = facesVec3Array[0].x ;
-		vertexPosition[15*i+1] = facesVec3Array[0].y;
-		vertexPosition[15*i+2] = facesVec3Array[0].z;
+		vertexPosition[12*i] = facesVec3Array[0].x ;
+		vertexPosition[12*i+1] = facesVec3Array[0].y;
+		vertexPosition[12*i+2] = facesVec3Array[0].z;
 		
-		vertexPosition[15*i+3] = facesVec3Array[1].x;
-		vertexPosition[15*i+4] = facesVec3Array[1].y;
-		vertexPosition[15*i+5] = facesVec3Array[1].z;
+		vertexPosition[12*i+3] = facesVec3Array[1].x;
+		vertexPosition[12*i+4] = facesVec3Array[1].y;
+		vertexPosition[12*i+5] = facesVec3Array[1].z;
 		
-		vertexPosition[15*i+6] = facesVec3Array[2].x;
-		vertexPosition[15*i+7] = facesVec3Array[2].y;
-		vertexPosition[15*i+8] = facesVec3Array[2].z;
+		vertexPosition[12*i+6] = facesVec3Array[2].x;
+		vertexPosition[12*i+7] = facesVec3Array[2].y;
+		vertexPosition[12*i+8] = facesVec3Array[2].z;
 		
-		vertexPosition[15*i+9] = facesVec3Array[3].x;
-		vertexPosition[15*i+10] = facesVec3Array[3].y;
-		vertexPosition[15*i+11] = facesVec3Array[3].z;
+		vertexPosition[12*i+9] = facesVec3Array[3].x;
+		vertexPosition[12*i+10] = facesVec3Array[3].y;
+		vertexPosition[12*i+11] = facesVec3Array[3].z;
 		
-		p.x = (facesVec3Array[0].x + facesVec3Array[2].x)/2 +epsilon;
-		p.y = (facesVec3Array[0].y + facesVec3Array[2].y)/2 +epsilon;
-		p.z = (facesVec3Array[0].z + facesVec3Array[2].z)/2 +epsilon;
-		//TODO: add a little epsilon to p
 		
-		vertexPosition[15*i+12] = p.x;
-		vertexPosition[15*i+13] = p.y;
-		vertexPosition[15*i+14] = p.z;
 	
 	}
 	gl.bufferData(gl.ARRAY_BUFFER, vertexPosition, gl.STATIC_DRAW);
@@ -240,49 +219,18 @@ function setupBuffers(){
 	
     pwgl.vertexTextureCoordinateBuffer = gl.createBuffer();
     gl.bindBuffer(gl.ARRAY_BUFFER, pwgl.vertexTextureCoordinateBuffer);
-    var textureCoordinates = new Float32Array(10*maxNPix);
-    if (fullZoom){
-    	//0.037037037
-    	var s_step=1/27;
-    	//0.034482759
-    	var t_step=1/29;
-    	
-    	var sindex = 0;
-    	var tindex = 0;
-    	for (var i=0; i < maxNPix; i++){
-        	// [1, 0],[1, 1],[0, 1],[0, 0]
-        	textureCoordinates[10*i] = (s_step + (s_step * sindex)).toFixed(9);
-        	textureCoordinates[10*i+1] = (1 - (t_step + t_step * tindex)).toFixed(9);
-        	textureCoordinates[10*i+2] = (s_step + (s_step * sindex)).toFixed(9);
-        	textureCoordinates[10*i+3] = (1 - (t_step * tindex)).toFixed(9);
-        	textureCoordinates[10*i+4] = (s_step * sindex).toFixed(9);
-        	textureCoordinates[10*i+5] = (1 - (t_step * tindex)).toFixed(9);
-        	textureCoordinates[10*i+6] = (s_step * sindex).toFixed(9);
-        	textureCoordinates[10*i+7] = (1 - (t_step + t_step * tindex)).toFixed(9);
-        	textureCoordinates[10*i+8] = ((s_step/2) + s_step * sindex).toFixed(9);
-        	textureCoordinates[10*i+9] = (1 - (t_step/2) - t_step * tindex ).toFixed(9);
-        	sindex++;
-        	if(sindex == 27){
-        		tindex++;
-        		sindex=0;
-        	}
-        }
-    }else{
-    	for (var i=0; i < maxNPix; i++){
-        	// [1, 0],[1, 1],[0, 1],[0, 0]
-        	textureCoordinates[10*i] = 1.0;
-        	textureCoordinates[10*i+1] = 0.0;
-        	textureCoordinates[10*i+2] = 1.0;
-        	textureCoordinates[10*i+3] = 1.0;
-        	textureCoordinates[10*i+4] = 0.0;
-        	textureCoordinates[10*i+5] = 1.0;
-        	textureCoordinates[10*i+6] = 0.0;
-        	textureCoordinates[10*i+7] = 0.0;
-        	textureCoordinates[10*i+8] = 0.5;
-        	textureCoordinates[10*i+9] = 0.5;
-        }
+    var textureCoordinates = new Float32Array(8*maxNPix);
+    for (var i=0; i < maxNPix; i++){
+    	// [1, 0],[1, 1],[0, 1],[0, 0]
+    	textureCoordinates[8*i] = 1.0;
+    	textureCoordinates[8*i+1] = 0.0;
+    	textureCoordinates[8*i+2] = 1.0;
+    	textureCoordinates[8*i+3] = 1.0;
+    	textureCoordinates[8*i+4] = 0.0;
+    	textureCoordinates[8*i+5] = 1.0;
+    	textureCoordinates[8*i+6] = 0.0;
+    	textureCoordinates[8*i+7] = 0.0;
     }
-    
     gl.bufferData(gl.ARRAY_BUFFER, textureCoordinates, gl.STATIC_DRAW);
     pwgl.VERTEX_TEX_COORD_BUF_ITEM_SIZE = 2;
     pwgl.VERTEX_TEX_COORD_BUF_NUM_ITEMS = textureCoordinates.length;
@@ -290,44 +238,18 @@ function setupBuffers(){
 	
 	pwgl.vertexIndexBuffer = gl.createBuffer();
     gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, pwgl.vertexIndexBuffer);
-    var vertexIndices = new Uint16Array(12*maxNPix);
+    var vertexIndices = new Uint16Array(6*maxNPix);
     var baseFaceIndex = 0; 
     for (var j=0; j< maxNPix; j++){
+    	vertexIndices[6*j] = baseFaceIndex;
+    	vertexIndices[6*j+1] = baseFaceIndex + 1;
+    	vertexIndices[6*j+2] = baseFaceIndex + 2;
     	
-    	vertexIndices[12*j] = baseFaceIndex + 4;
-    	vertexIndices[12*j+1] = baseFaceIndex;
-    	vertexIndices[12*j+2] = baseFaceIndex + 1;
+    	vertexIndices[6*j+3] = baseFaceIndex;
+    	vertexIndices[6*j+4] = baseFaceIndex + 2;
+    	vertexIndices[6*j+5] = baseFaceIndex + 3;
     	
-    	vertexIndices[12*j+3] = baseFaceIndex + 4;
-    	vertexIndices[12*j+4] = baseFaceIndex + 1;
-    	vertexIndices[12*j+5] = baseFaceIndex + 2;
-    	
-    	vertexIndices[12*j+6] = baseFaceIndex + 4;
-    	vertexIndices[12*j+7] = baseFaceIndex + 2;
-    	vertexIndices[12*j+8] = baseFaceIndex + 3;
-    	
-    	vertexIndices[12*j+9] = baseFaceIndex + 4;
-    	vertexIndices[12*j+10] = baseFaceIndex + 3;
-    	vertexIndices[12*j+11] = baseFaceIndex;
-    	
-    	
-//     	vertexIndices[12*j] = baseFaceIndex;
-//     	vertexIndices[12*j+1] = baseFaceIndex + 1;
-//     	vertexIndices[12*j+2] = baseFaceIndex + 4;
-    	
-//     	vertexIndices[12*j+3] = baseFaceIndex;
-//     	vertexIndices[12*j+4] = baseFaceIndex + 4;
-//     	vertexIndices[12*j+5] = baseFaceIndex + 3;
-    	
-//     	vertexIndices[12*j+6] = baseFaceIndex + 4;
-//     	vertexIndices[12*j+7] = baseFaceIndex + 1;
-//     	vertexIndices[12*j+8] = baseFaceIndex + 2;
-    	
-//     	vertexIndices[12*j+9] = baseFaceIndex + 4;
-//     	vertexIndices[12*j+10] = baseFaceIndex + 2;
-//     	vertexIndices[12*j+11] = baseFaceIndex + 3;
-    		
-    	baseFaceIndex = baseFaceIndex+5;
+    	baseFaceIndex = baseFaceIndex+4;
     }
     gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, vertexIndices, gl.STATIC_DRAW);
     pwgl.VERTEX_INDEX_BUF_ITEM_SIZE = 1;
@@ -347,19 +269,13 @@ function setupBuffers(){
 
 function setupTextures(){
 	pwgl.texturesArray = [];
-	if (fullZoom){
-		pwgl.texturesArray[0] = gl.createTexture();
-		loadImageForTexture("http://skies.esac.esa.int/DSSColor/Norder3/Allsky.jpg", pwgl.texturesArray[0]);
-	}else{
-		for (var i=0; i<maxNPix;i++){
-			pwgl.texturesArray[i] = gl.createTexture();
-			loadImageForTexture("http://skies.esac.esa.int/DSSColor/Norder3/Dir0/Npix"+i+".jpg", pwgl.texturesArray[i]);
-		}	
+	for (var i=0; i<maxNPix;i++){
+		pwgl.texturesArray[i] = gl.createTexture();
+		loadImageForTexture(i, pwgl.texturesArray[i]);
 	}
-	
 }
 
-function loadImageForTexture(url, texture){
+function loadImageForTexture(i, texture){
 	var image = new Image();
 	image.onload = function(){
 		pwgl.ongoingImageLoads.splice(pwgl.ongoingImageLoads.indexOf(image), 1);
@@ -367,7 +283,7 @@ function loadImageForTexture(url, texture){
 	}
 	pwgl.ongoingImageLoads.push(image);
 	image.crossOrigin = "anonymous";
-	image.src=url;
+	image.src="http://skies.esac.esa.int/DSSColor/Norder3/Dir0/Npix"+i+".jpg";
 }
 
 function textureFinishedLoading(image, texture){
@@ -376,16 +292,12 @@ function textureFinishedLoading(image, texture){
 	
 	gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, image);
 	
-	if (fullZoom){
-		// No, it's not a power of 2. Turn of mips and set wrapping to clamp to edge
-	    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
-	    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
-	    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);	
-	}else{
-		gl.generateMipmap(gl.TEXTURE_2D);
-		gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
-		gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
-	}
+	gl.generateMipmap(gl.TEXTURE_2D);
+
+	gl.texParameteri(gl.TEXTURE_2D,
+            gl.TEXTURE_MAG_FILTER, gl.NEAREST);
+         gl.texParameteri(gl.TEXTURE_2D,
+            gl.TEXTURE_MIN_FILTER, gl.NEAREST);
 	gl.bindTexture(gl.TEXTURE_2D, null);
 }
 
@@ -484,26 +396,21 @@ function startup() {
 	
 	    vxy = [vx, vy];
 	    
-// 	    console.log("view coords:");
-// 	    console.log(vxy);
+	    console.log("view coords:");
+	    console.log(vxy);
 	    var xy = viewToWorld(vx, vy, rect);
-// 	    console.log("canvas coords:");
-// 	    console.log(xy);
+	    console.log("canvas coords:");
+	    console.log(xy);
 	    var xyz = worldToModel(xy);
-// 	    console.log("WebGL coords:");
-// 	    console.log(xyz);
+	    console.log("WebGL coords:");
+	    console.log(xyz);
 	    
 	    var radec = modelToRaDec(xyz);
-// 	    console.log("ra dec coords:");
-// 	    console.log(radec);
-// 	    console.log("------------------------");
+	    console.log("ra dec coords:");
+	    console.log(radec);
+	    console.log("------------------------");
 	    
 	    coordsDiv.innerHTML = "ra: "+radec[0]+" dec: "+radec[1];
-	}
-	
-	
-	canvas.onmousewheel = function (ev){
-		console.log("Mouse scroll");
 	}
 	
 	draw();
@@ -545,7 +452,10 @@ function modelToRaDec(xyz){
 
 <body onload="startup();">
 	<div style="border: 1px solid black; margin: 40px; position: absolute;" >
-  		<canvas id="myGLCanvas" width="400" height="400"></canvas>
+  		<canvas id="myGLCanvas" width="800" height="800"></canvas>
+  	</div>
+  	<div id="fps-counter">
+  		FPS: <span id="fps">--</span>
   	</div>
   	<div id="coords">
   		coords: <span id="coords">--</span>
