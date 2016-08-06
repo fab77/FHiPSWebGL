@@ -53,6 +53,7 @@ var norder = 3;
 var nside = Math.pow(2, norder);
 var healpix = new Healpix(nside);
 var maxNPix = healpix.getNPix();
+var skyRotationMatrix = mat4.create();
 
 console.log("maxNPix: "+maxNPix);
 
@@ -150,6 +151,9 @@ function draw(){
 	
 	mat4.identity(pwgl.modelViewMatrix);
 
+    mat4.multiply(pwgl.modelViewMatrix, skyRotationMatrix);
+	
+	
 	uploadModelViewMatrixToShader();
 	uploadProjectionMatrixToShader();
 	gl.uniform1i(pwgl.uniformSamplerLoc, 0);
@@ -456,6 +460,10 @@ function startup() {
 	gl.clearColor(1.0, 1.0, 1.0, 1.0);
 	gl.enable(gl.DEPTH_TEST);
 	
+	
+    mat4.identity(skyRotationMatrix);
+
+	
 	var coordsDiv = document.getElementById('coords');
 	canvas.onmousedown = function(ev) {   // Mouse is pressed
 	    
@@ -499,16 +507,43 @@ function startup() {
 // 	    console.log("------------------------");
 	    
 	    coordsDiv.innerHTML = "ra: "+radec[0]+" dec: "+radec[1];
+	    
+	    if (!mouseDown) {
+	        return;
+	    }
+	    
+
+	    var deltaX = vx - lastMouseX
+	    var newRotationMatrix = mat4.create();
+	    mat4.identity(newRotationMatrix);
+	    mat4.rotate(newRotationMatrix, degToRad(deltaX / 10), [0, 1, 0]);
+
+	    var deltaY = vy - lastMouseY;
+	    mat4.rotate(newRotationMatrix, degToRad(deltaY / 10), [1, 0, 0]);
+
+	    mat4.multiply(newRotationMatrix, skyRotationMatrix, skyRotationMatrix);
+
+	    lastMouseX = vx;
+	    lastMouseY = vy;
+
 	}
 	
 	var container = document.getElementById("container");
 	container.addEventListener( 'mousewheel', onMouseWheel, false );
 	container.addEventListener( 'DOMMouseScroll', onMouseWheel, false);
 	window.addEventListener( 'resize', onWindowResized, false );
-	
+	canvas.onmousedown = handleMouseDown;
+    document.onmouseup = handleMouseUp;
+    
 	draw();
 }
 
+function degToRad(degrees) {
+    return degrees * Math.PI / 180;
+}
+
+var mouseDown = false;
+var lastMouseX, lastMouseY;
 var zoom = 1;
 function onMouseWheel(ev){
 	console.log("Scroll");
@@ -531,6 +566,20 @@ function onMouseWheel(ev){
 	}
 }
 
+function handleMouseDown(event) {
+    mouseDown = true;
+    lastMouseX = event.clientX;
+    lastMouseY = event.clientY;
+}
+
+
+function handleMouseUp(event) {
+    mouseDown = false;
+}
+
+
+
+
 function onWindowResized(ev){
 	console.log("Window resize");	
 }
@@ -542,10 +591,6 @@ function viewToWorld(vx, vy, rect){
 }
 
 function worldToModel(xy){
-// 	var x = Math.sqrt(1 - xy[0]*xy[0] - xy[1]*xy[1]);
-// 	var y = xy[0];
-// 	var z = xy[1];
-	
 	var x = xy[0];
 	var y = xy[1];
 	var z = Math.sqrt(1 - xy[0]*xy[0] - xy[1]*xy[1]);
