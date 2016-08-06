@@ -492,40 +492,36 @@ function startup() {
 	
 	    vxy = [vx, vy];
 	    
-// 	    console.log("view coords:");
-// 	    console.log(vxy);
 	    var xy = viewToWorld(vx, vy, rect);
-// 	    console.log("canvas coords:");
-// 	    console.log(xy);
-	    var xyz = worldToModel(xy);
-// 	    console.log("WebGL coords:");
-// 	    console.log(xyz);
+	    var xyz = worldToModel(xy);	    
 	    
-	    var radec = modelToRaDec(xyz);
-// 	    console.log("ra dec coords:");
-// 	    console.log(radec);
-// 	    console.log("------------------------");
 	    
-	    coordsDiv.innerHTML = "ra: "+radec[0]+" dec: "+radec[1];
 	    
-	    if (!mouseDown) {
-	        return;
+	    
+	    if (mouseDown) {
+		    var deltaX = vx - lastMouseX
+		    var newRotationMatrix = mat4.create();
+		    mat4.identity(newRotationMatrix);
+		    mat4.rotate(newRotationMatrix, degToRad(deltaX / 10), [0, 1, 0]);
+	
+		    var deltaY = vy - lastMouseY;
+		    mat4.rotate(newRotationMatrix, degToRad(deltaY / 10), [1, 0, 0]);
+	
+		    mat4.multiply(newRotationMatrix, skyRotationMatrix, skyRotationMatrix);
+	
+		    lastMouseX = vx;
+		    lastMouseY = vy;
 	    }
+	    console.log(xyz);
+	    console.log(skyRotationMatrix);
+	    var rxyz = [];
+	    rxyz[0] = skyRotationMatrix[0] * xyz[0] + skyRotationMatrix[1] * xyz[1] + skyRotationMatrix[2] * xyz[2];
+	    rxyz[1] = skyRotationMatrix[4] * xyz[0] + skyRotationMatrix[5] * xyz[1] + skyRotationMatrix[6] * xyz[2];
+	    rxyz[2] = skyRotationMatrix[8] * xyz[0] + skyRotationMatrix[9] * xyz[1] + skyRotationMatrix[10] * xyz[2];
 	    
-
-	    var deltaX = vx - lastMouseX
-	    var newRotationMatrix = mat4.create();
-	    mat4.identity(newRotationMatrix);
-	    mat4.rotate(newRotationMatrix, degToRad(deltaX / 10), [0, 1, 0]);
-
-	    var deltaY = vy - lastMouseY;
-	    mat4.rotate(newRotationMatrix, degToRad(deltaY / 10), [1, 0, 0]);
-
-	    mat4.multiply(newRotationMatrix, skyRotationMatrix, skyRotationMatrix);
-
-	    lastMouseX = vx;
-	    lastMouseY = vy;
-
+	    console.log(rxyz);
+	    var radec = modelToRaDec(rxyz);
+	    coordsDiv.innerHTML = "ra: "+radec[0]+" dec: "+radec[1];
 	}
 	
 	var container = document.getElementById("container");
