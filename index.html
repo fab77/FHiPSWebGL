@@ -146,7 +146,7 @@ function draw(){
 	gl.viewport(0, 0, gl.viewportWidth, gl.viewportHeight);
 	gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
 	
-	mat4.ortho(-1, 1, -1, 1, -1.1, 100, pwgl.projectionMatrix);
+	mat4.ortho(-1/zoom, 1/zoom, -1/zoom, 1/zoom, -1, 100, pwgl.projectionMatrix);
 	
 	mat4.identity(pwgl.modelViewMatrix);
 
@@ -501,12 +501,38 @@ function startup() {
 	    coordsDiv.innerHTML = "ra: "+radec[0]+" dec: "+radec[1];
 	}
 	
-	
-	canvas.onmousewheel = function (ev){
-		console.log("Mouse scroll");
-	}
+	var container = document.getElementById("container");
+	container.addEventListener( 'mousewheel', onMouseWheel, false );
+	container.addEventListener( 'DOMMouseScroll', onMouseWheel, false);
+	window.addEventListener( 'resize', onWindowResized, false );
 	
 	draw();
+}
+
+var zoom = 1;
+function onMouseWheel(ev){
+	console.log("Scroll");
+	// WebKit
+	if ( ev.wheelDeltaY ) {
+		console.log("webkit zoom: "+ev.wheelDeltaY);
+		zoom -= ev.wheelDeltaY * 0.05;
+	// Opera / Explorer 9
+	} else if ( ev.wheelDelta ) {
+		console.log("explorer zoom: "+ev.wheelDelta);
+		zoom -= ev.wheelDelta * 0.05;
+	// Firefox
+	} else if ( ev.detail ) {
+		console.log("firefox ev zoom: "+ev.detail);
+		zoom += ev.detail * 0.03;
+		console.log("zoom: "+zoom);
+	}
+	if (zoom<=1){
+		zoom = 1;
+	}
+}
+
+function onWindowResized(ev){
+	console.log("Window resize");	
 }
 
 function viewToWorld(vx, vy, rect){
@@ -544,7 +570,7 @@ function modelToRaDec(xyz){
 </head>
 
 <body onload="startup();">
-	<div style="border: 1px solid black; margin: 40px; position: absolute;" >
+	<div id='container' style="border: 1px solid black; margin: 40px; position: absolute;" >
   		<canvas id="myGLCanvas" width="400" height="400"></canvas>
   	</div>
   	<div id="coords">
