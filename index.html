@@ -54,6 +54,11 @@ var nside = Math.pow(2, norder);
 var healpix = new Healpix(nside);
 var maxNPix = healpix.getNPix();
 var skyRotationMatrix = mat4.create();
+var mouseDown = false;
+var lastMouseX, lastMouseY;
+var zoom = 1;
+var fovDiv = document.getElementById('fov');
+var fov = 180/zoom;
 
 console.log("maxNPix: "+maxNPix);
 
@@ -465,7 +470,9 @@ function startup() {
     mat4.identity(skyRotationMatrix);
 
 	
-	var coordsDiv = document.getElementById('coords');
+    var coordsDiv = document.getElementById('coords');
+    fovDiv = document.getElementById('fov');
+    fovDiv.innerHTML = "fov: "+fov+"<sup>&#8728;</sup>";
 // 	canvas.onmousedown = function(ev) {   // Mouse is pressed
 	    
 // 	    var vx = ev.clientX; // x coordinate of a mouse pointer
@@ -511,10 +518,10 @@ function startup() {
 		    var deltaX = vx - lastMouseX
 		    var newRotationMatrix = mat4.create();
 		    mat4.identity(newRotationMatrix);
-		    mat4.rotate(newRotationMatrix, degToRad(deltaX / 10), [0, 1, 0]);
+		    mat4.rotate(newRotationMatrix, degToRad(deltaX / 3), [0, 1, 0]);
 	
 		    var deltaY = vy - lastMouseY;
-		    mat4.rotate(newRotationMatrix, degToRad(deltaY / 10), [1, 0, 0]);
+		    mat4.rotate(newRotationMatrix, degToRad(deltaY / 3), [1, 0, 0]);
 	
 		    mat4.multiply(newRotationMatrix, skyRotationMatrix, skyRotationMatrix);
 	
@@ -547,9 +554,7 @@ function degToRad(degrees) {
     return degrees * Math.PI / 180;
 }
 
-var mouseDown = false;
-var lastMouseX, lastMouseY;
-var zoom = 1;
+
 
 function onMouseWheel(ev){
 	console.log("Scroll");
@@ -573,6 +578,8 @@ function onMouseWheel(ev){
 	if (zoom<=1){
 		zoom = 1;
 	}
+	fov = 180/zoom;
+	fovDiv.innerHTML = "fov: "+fov+"<sup>&#8728;</sup>";
 }
 
 function handleMouseDown(event) {
@@ -622,7 +629,7 @@ function modelToRaDec(xyz){
 
 <body onload="startup();">
 	<div id='container' style="border: 1px solid black; margin: 40px; position: absolute;" >
-  		<canvas id="myGLCanvas" width="400" height="400"></canvas>
+  		<canvas id="myGLCanvas" width="500" height="500"></canvas>
   	</div>
   	<div id="coords">
   		coords: <span id="coords">--</span>
