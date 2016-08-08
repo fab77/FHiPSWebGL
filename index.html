@@ -147,7 +147,8 @@ function draw(){
 	gl.viewport(0, 0, gl.viewportWidth, gl.viewportHeight);
 	gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
 	
-	mat4.ortho(-1/zoom, 1/zoom, -1/zoom, 1/zoom, -1, 100, pwgl.projectionMatrix);
+// 	mat4.ortho(-1/zoom, 1/zoom, -1/zoom, 1/zoom, -1, 1, pwgl.projectionMatrix);
+	mat4.ortho(-1-(-1+1/zoom), 1-(1-1/zoom), -1-(-1+1/zoom), 1-(1-1/zoom), -1, 1, pwgl.projectionMatrix);
 	
 	mat4.identity(pwgl.modelViewMatrix);
 
@@ -465,39 +466,47 @@ function startup() {
 
 	
 	var coordsDiv = document.getElementById('coords');
-	canvas.onmousedown = function(ev) {   // Mouse is pressed
+// 	canvas.onmousedown = function(ev) {   // Mouse is pressed
 	    
-	    var vx = ev.clientX; // x coordinate of a mouse pointer
-	    var vy = ev.clientY; // y coordinate of a mouse pointer
-	    var rect = ev.target.getBoundingClientRect() ;
+// 	    var vx = ev.clientX; // x coordinate of a mouse pointer
+// 	    var vy = ev.clientY; // y coordinate of a mouse pointer
+// 	    var rect = ev.target.getBoundingClientRect() ;
 
-	    var xy = viewToWorld(vx, vy, rect);
-	    console.log("canvas coords:");
-	    console.log(xy);
-	    var xyz = worldToModel(xy);
-	    console.log("WebGL coords:");
-	    console.log(xyz);
+// 	    var xy = viewToWorld(vx, vy, rect);
+// 	    console.log("canvas coords:");
+// 	    console.log(xy);
+// 	    var xyz = worldToModel(xy);
+// 	    console.log("WebGL coords:");
+// 	    console.log(xyz);
 	    
-	    var radec = modelToRaDec(xyz);
-	    console.log("ra dec coords:");
-	    console.log(radec);
-	    console.log("------------------------");
-	}
+// 	    var radec = modelToRaDec(xyz);
+// 	    console.log("ra dec coords:");
+// 	    console.log(radec);
+// 	    console.log("------------------------");
+// 	}
 	
 	canvas.onmousemove = function(ev) {   // Mouse is pressed
-	    
+	    console.log("pwgl.projectionMatrix");
+	    console.log(pwgl.projectionMatrix);
 	    var vx = ev.clientX; // x coordinate of a mouse pointer
 	    var vy = ev.clientY; // y coordinate of a mouse pointer
-	    var rect = ev.target.getBoundingClientRect() ;
-	
+	    var rect = ev.target.getBoundingClientRect();	
 	    vxy = [vx, vy];
 	    
-	    var xy = viewToWorld(vx, vy, rect);
-	    var xyz = worldToModel(xy);	    
+	    var xy = viewToWorld(vxy[0], vxy[1], rect);
+	    console.log("xy");
+	    console.log(xy);
+	    xy[0] = xy[0] * 1/zoom;
+    	xy[1] = xy[1] * 1/zoom;
 	    
+	    console.log("xy after");
+	    console.log(xy);
 	    
+	    var xyz = worldToModel(xy); 
 	    
-	    
+	    console.log("xyz");
+	    console.log(xyz);
+	    console.log("------------------");
 	    if (mouseDown) {
 		    var deltaX = vx - lastMouseX
 		    var newRotationMatrix = mat4.create();
@@ -512,14 +521,14 @@ function startup() {
 		    lastMouseX = vx;
 		    lastMouseY = vy;
 	    }
-	    console.log(xyz);
-	    console.log(skyRotationMatrix);
+// 	    console.log(xyz);
+// 	    console.log(skyRotationMatrix);
 	    var rxyz = [];
 	    rxyz[0] = skyRotationMatrix[0] * xyz[0] + skyRotationMatrix[1] * xyz[1] + skyRotationMatrix[2] * xyz[2];
 	    rxyz[1] = skyRotationMatrix[4] * xyz[0] + skyRotationMatrix[5] * xyz[1] + skyRotationMatrix[6] * xyz[2];
 	    rxyz[2] = skyRotationMatrix[8] * xyz[0] + skyRotationMatrix[9] * xyz[1] + skyRotationMatrix[10] * xyz[2];
 	    
-	    console.log(rxyz);
+// 	    console.log(rxyz);
 	    var radec = modelToRaDec(rxyz);
 	    coordsDiv.innerHTML = "ra: "+radec[0]+" dec: "+radec[1];
 	}
@@ -541,19 +550,23 @@ function degToRad(degrees) {
 var mouseDown = false;
 var lastMouseX, lastMouseY;
 var zoom = 1;
+
 function onMouseWheel(ev){
 	console.log("Scroll");
 	// WebKit
 	if ( ev.wheelDeltaY ) {
 		console.log("webkit zoom: "+ev.wheelDeltaY);
+
 		zoom -= ev.wheelDeltaY * 0.05;
 	// Opera / Explorer 9
 	} else if ( ev.wheelDelta ) {
 		console.log("explorer zoom: "+ev.wheelDelta);
+
 		zoom -= ev.wheelDelta * 0.05;
 	// Firefox
 	} else if ( ev.detail ) {
 		console.log("firefox ev zoom: "+ev.detail);
+
 		zoom += ev.detail * 0.03;
 		console.log("zoom: "+zoom);
 	}
@@ -572,9 +585,6 @@ function handleMouseDown(event) {
 function handleMouseUp(event) {
     mouseDown = false;
 }
-
-
-
 
 function onWindowResized(ev){
 	console.log("Window resize");	
@@ -616,6 +626,9 @@ function modelToRaDec(xyz){
   	</div>
   	<div id="coords">
   		coords: <span id="coords">--</span>
+  	</div>
+  	<div id="fov">
+  		fov: <span id="fov">--</span>
   	</div>
 </body>
 </html>
