@@ -6,6 +6,7 @@
 <title>Insert title here</title>
 <script src="lib/Healpix/Xyf.js"></script>
 <script src="lib/Healpix/Vec3.js"></script>
+<script src="lib/Healpix/Pointing.js"></script> 
 <script src="lib/Healpix/Hploc.js"></script>
 <script src="lib/Healpix/Fxyf.js"></script>
 <script src="lib/Healpix/Healpix.js"></script> 
@@ -59,6 +60,8 @@ var lastMouseX, lastMouseY;
 var zoom = 1;
 var fovDiv = document.getElementById('fov');
 var fov = 180/zoom;
+canvasWidth = 600;
+canvasHeight = 600;
 
 console.log("maxNPix: "+maxNPix);
 
@@ -372,10 +375,26 @@ function setupTextures(){
 		pwgl.texturesArray[0] = gl.createTexture();
 		loadImageForTexture("http://skies.esac.esa.int/DSSColor/Norder3/Allsky.jpg", pwgl.texturesArray[0]);
 	}else{
+		var cc = getCoordsCenter();
+		var p = new Pointing(new Vec3(cc[0], cc[1], cc[2]));
+		var ccPixNo = this.healpix.ang2pix(p);
+		var neighbours = this.healpix.neighbours(ccPixNo);
+		console.log("CC Pixel: "+ccPixNo);
+		console.log(neighbours);
+
 		for (var i=0; i<maxNPix;i++){
-			pwgl.texturesArray[i] = gl.createTexture();
-			loadImageForTexture("http://skies.esac.esa.int/DSSColor/Norder3/Dir0/Npix"+i+".jpg", pwgl.texturesArray[i]);
+			if (neighbours.indexOf(i) > 0 || ccPixNo == i){
+// 				if (ccPixNo == i){
+				pwgl.texturesArray[i] = gl.createTexture();
+				loadImageForTexture("http://skies.esac.esa.int/DSSColor/Norder3/Dir0/Npix"+i+".jpg", pwgl.texturesArray[i]);
+			}
 		}	
+
+// 		for (var i=0; i<maxNPix;i++){
+			
+// 			pwgl.texturesArray[i] = gl.createTexture();
+// 			loadImageForTexture("http://skies.esac.esa.int/DSSColor/Norder3/Dir0/Npix"+i+".jpg", pwgl.texturesArray[i]);
+// 		}	
 	}
 	
 }
@@ -398,7 +417,7 @@ function textureFinishedLoading(image, texture){
 	gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, image);
 	
 	if (fov>=50){
-		// No, it's not a power of 2. Turn of mips and set wrapping to clamp to edge
+		// it's not a power of 2. Turn of mips and set wrapping to clamp to edge
 	    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
 	    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
 	    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);	
@@ -463,85 +482,26 @@ function handleContextRestored(event){
 	pwgl.requestId = requestAnimationFrame(draw, canvas);
 }
 
-
-function startup() {
-	canvas = document.getElementById("myGLCanvas");
-	
-	canvas.addEventListener('webglcontextlost', handleContextLost, false);
-	canvas.addEventListener('webglcontextrestored', handleContextRestored, false);
-	
-	gl = createGLContext(canvas);
-	setupShaders();
-	setupBuffers();
-	setupTextures();
-	gl.clearColor(1.0, 1.0, 1.0, 1.0);
-	gl.enable(gl.DEPTH_TEST);
-	
-	
-    mat4.identity(skyRotationMatrix);
-
-	
-    var coordsDiv = document.getElementById('coords');
-    fovDiv = document.getElementById('fov');
-    fovDiv.innerHTML = "fov: "+fov+"<sup>&#8728;</sup>";
-	
-	canvas.onmousemove = function(ev) {   // Mouse is pressed
-// 	    console.log("pwgl.projectionMatrix");
-// 	    console.log(pwgl.projectionMatrix);
-	    var vx = ev.clientX; // x coordinate of a mouse pointer
-	    var vy = ev.clientY; // y coordinate of a mouse pointer
-	    var rect = ev.target.getBoundingClientRect();	
-	    vxy = [vx, vy];
-	    
-	    var xy = viewToWorld(vxy[0], vxy[1], rect);
-// 	    console.log("xy");
-// 	    console.log(xy);
-	    xy[0] = xy[0] * 1/zoom;
-    	xy[1] = xy[1] * 1/zoom;
-	    
-// 	    console.log("xy after");
-// 	    console.log(xy);
-	    
-	    var xyz = worldToModel(xy); 
-	    
-// 	    console.log("xyz");
-// 	    console.log(xyz);
-// 	    console.log("------------------");
-	    if (mouseDown) {
-		    var deltaX = vx - lastMouseX
-		    var newRotationMatrix = mat4.create();
-		    mat4.identity(newRotationMatrix);
-		    mat4.rotate(newRotationMatrix, degToRad(deltaX / 3), [0, 1, 0]);
-	
-		    var deltaY = vy - lastMouseY;
-		    mat4.rotate(newRotationMatrix, degToRad(deltaY / 3), [1, 0, 0]);
-	
-		    mat4.multiply(newRotationMatrix, skyRotationMatrix, skyRotationMatrix);
-	
-		    lastMouseX = vx;
-		    lastMouseY = vy;
-	    }
-// 	    console.log(xyz);
-// 	    console.log(skyRotationMatrix);
-	    var rxyz = [];
-	    rxyz[0] = skyRotationMatrix[0] * xyz[0] + skyRotationMatrix[1] * xyz[1] + skyRotationMatrix[2] * xyz[2];
-	    rxyz[1] = skyRotationMatrix[4] * xyz[0] + skyRotationMatrix[5] * xyz[1] + skyRotationMatrix[6] * xyz[2];
-	    rxyz[2] = skyRotationMatrix[8] * xyz[0] + skyRotationMatrix[9] * xyz[1] + skyRotationMatrix[10] * xyz[2];
-	    
-// 	    console.log(rxyz);
-	    var radec = modelToRaDec(rxyz);
-	    coordsDiv.innerHTML = "ra: "+radec[0]+" dec: "+radec[1];
-	}
-	
-	var container = document.getElementById("container");
-	container.addEventListener( 'mousewheel', onMouseWheel, false );
-	container.addEventListener( 'DOMMouseScroll', onMouseWheel, false);
-	window.addEventListener( 'resize', onWindowResized, false );
-	canvas.onmousedown = handleMouseDown;
-    document.onmouseup = handleMouseUp;
+function getCoordsCenter(){
+	var vx = canvasWidth/2; // x coordinate of a mouse pointer
+    var vy = canvasHeight/2; // y coordinate of a mouse pointer
+    var rect = canvas.getBoundingClientRect();
+//     console.log(rect);
+    vxy = [vx, vy];
     
-	draw();
+    var xy = viewToWorld(vxy[0], vxy[1], rect);
+    xy[0] = xy[0] * 1/zoom;
+	xy[1] = xy[1] * 1/zoom;
+    
+    var xyz = worldToModel(xy); 
+    var rcc = [];
+    rcc[0] = skyRotationMatrix[0] * xyz[0] + skyRotationMatrix[1] * xyz[1] + skyRotationMatrix[2] * xyz[2];
+    rcc[1] = skyRotationMatrix[4] * xyz[0] + skyRotationMatrix[5] * xyz[1] + skyRotationMatrix[6] * xyz[2];
+    rcc[2] = skyRotationMatrix[8] * xyz[0] + skyRotationMatrix[9] * xyz[1] + skyRotationMatrix[10] * xyz[2];
+    return rcc; 
 }
+
+
 
 function degToRad(degrees) {
     return degrees * Math.PI / 180;
@@ -550,7 +510,6 @@ function degToRad(degrees) {
 
 
 function onMouseWheel(ev){
-// 	console.log("Scroll");
 	// WebKit
 	if ( ev.wheelDeltaY ) {
 // 		console.log("webkit zoom: "+ev.wheelDeltaY);
@@ -577,6 +536,7 @@ function onMouseWheel(ev){
 }
 
 function handleMouseDown(event) {
+	console.log(getCoordsCenter(event));
     mouseDown = true;
     lastMouseX = event.clientX;
     lastMouseY = event.clientY;
@@ -618,19 +578,96 @@ function modelToRaDec(xyz){
 
 	return [ra* 180 / Math.PI, 90 - dec* (180 / Math.PI)];
 }
+
+function startup() {
+	canvas = document.createElement('canvas');
+	div = document.getElementById("container"); 
+    canvas.id     = "myGLCanvas";
+    canvas.width  = canvasWidth;
+    canvas.height = canvasHeight;
+    canvas.style.zIndex   = 8;
+    canvas.style.position = "absolute";
+    canvas.style.border   = "1px solid";
+    div.appendChild(canvas)
+// 	canvas = document.getElementById("myGLCanvas");
+	
+	canvas.addEventListener('webglcontextlost', handleContextLost, false);
+	canvas.addEventListener('webglcontextrestored', handleContextRestored, false);
+	
+	gl = createGLContext(canvas);
+	setupShaders();
+	setupBuffers();
+	setupTextures();
+	gl.clearColor(1.0, 1.0, 1.0, 1.0);
+	gl.enable(gl.DEPTH_TEST);
+	
+	
+    mat4.identity(skyRotationMatrix);
+
+	
+    var coordsDiv = document.getElementById('coords');
+    fovDiv = document.getElementById('fov');
+    fovDiv.innerHTML = "fov: "+fov+"<sup>&#8728;</sup>";
+	
+	canvas.onmousemove = function(ev) {   // Mouse is pressed
+	    var vx = ev.clientX; // x coordinate of a mouse pointer
+	    var vy = ev.clientY; // y coordinate of a mouse pointer
+	    var rect = ev.target.getBoundingClientRect();	
+	    vxy = [vx, vy];
+	    
+	    var xy = viewToWorld(vxy[0], vxy[1], rect);
+	    xy[0] = xy[0] * 1/zoom;
+    	xy[1] = xy[1] * 1/zoom;
+	    
+	    var xyz = worldToModel(xy); 
+	    
+	    if (mouseDown) {
+		    var deltaX = vx - lastMouseX
+		    var newRotationMatrix = mat4.create();
+		    mat4.identity(newRotationMatrix);
+		    mat4.rotate(newRotationMatrix, degToRad(deltaX / 3), [0, 1, 0]);
+	
+		    var deltaY = vy - lastMouseY;
+		    mat4.rotate(newRotationMatrix, degToRad(deltaY / 3), [1, 0, 0]);
+	
+		    mat4.multiply(newRotationMatrix, skyRotationMatrix, skyRotationMatrix);
+	
+		    lastMouseX = vx;
+		    lastMouseY = vy;
+	    }
+	    var rxyz = [];
+	    rxyz[0] = skyRotationMatrix[0] * xyz[0] + skyRotationMatrix[1] * xyz[1] + skyRotationMatrix[2] * xyz[2];
+	    rxyz[1] = skyRotationMatrix[4] * xyz[0] + skyRotationMatrix[5] * xyz[1] + skyRotationMatrix[6] * xyz[2];
+	    rxyz[2] = skyRotationMatrix[8] * xyz[0] + skyRotationMatrix[9] * xyz[1] + skyRotationMatrix[10] * xyz[2];
+	    
+	    var radec = modelToRaDec(rxyz);
+	    coordsDiv.innerHTML = "ra: "+radec[0]+" dec: "+radec[1];
+	}
+	
+	var container = document.getElementById("container");
+	container.addEventListener( 'mousewheel', onMouseWheel, false );
+	container.addEventListener( 'DOMMouseScroll', onMouseWheel, false);
+	window.addEventListener( 'resize', onWindowResized, false );
+	canvas.onmousedown = handleMouseDown;
+    document.onmouseup = handleMouseUp;
+    
+	draw();
+}
 </script>
 </head>
 
 <body onload="startup();">
-	<div id='container' style="border: 1px solid black; margin: 40px; position: absolute;" >
-  		<canvas id="myGLCanvas" width="500" height="500"></canvas>
+<!-- 	<div id='container' style="border: 1px solid black; margin: 40px; position: absolute;" > -->
+	<div id='container' style="border: 1px solid black;" >
+<!--   		<canvas id="myGLCanvas" width="500" height="500"></canvas> -->
   	</div>
-  	<div id="coords">
+  	<div id="coords" style="z-index: 10; position: absolute; color: blue;">
   		coords: <span id="coords">--</span>
   	</div>
-  	<div id="fov">
+  	<div id="fov" style="z-index: 10; position: absolute; margin-top:15px; color: blue;">
   		fov: <span id="fov">--</span>
   	</div>
+  	
 </body>
 </html>
 
