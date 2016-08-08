@@ -145,8 +145,18 @@ function loadShaderFromDOM(id) {
 }
 
 
-
+var oldFov;
 function draw(){
+// 	if (fov<=50){
+// 		setupBuffers();
+// 		setupTextures();
+// 	}
+if (oldFov != fov && fov <= 50){
+	console.log("redraw");
+		setupBuffers();
+		setupTextures();
+		oldFov = fov;
+}
 	pwgl.requestId = requestAnimationFrame(draw);
 	
 	gl.viewport(0, 0, gl.viewportWidth, gl.viewportHeight);
@@ -179,7 +189,7 @@ function draw(){
     
     gl.activeTexture(gl.TEXTURE0);
     
-    if (fullZoom){
+    if (fov>=50){
     	gl.bindTexture(gl.TEXTURE_2D, pwgl.texturesArray[0]);
     	for (var i=0;i<maxNPix;i++){
 //         	gl.drawElements(gl.TRIANGLES, 6, 
@@ -251,7 +261,7 @@ function setupBuffers(){
     pwgl.vertexTextureCoordinateBuffer = gl.createBuffer();
     gl.bindBuffer(gl.ARRAY_BUFFER, pwgl.vertexTextureCoordinateBuffer);
     var textureCoordinates = new Float32Array(10*maxNPix);
-    if (fullZoom){
+    if (fov>=50){
     	//0.037037037
     	var s_step=1/27;
     	//0.034482759
@@ -357,7 +367,8 @@ function setupBuffers(){
 
 function setupTextures(){
 	pwgl.texturesArray = [];
-	if (fullZoom){
+	// fullZoom
+	if (fov >=50){
 		pwgl.texturesArray[0] = gl.createTexture();
 		loadImageForTexture("http://skies.esac.esa.int/DSSColor/Norder3/Allsky.jpg", pwgl.texturesArray[0]);
 	}else{
@@ -386,7 +397,7 @@ function textureFinishedLoading(image, texture){
 	
 	gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, image);
 	
-	if (fullZoom){
+	if (fov>=50){
 		// No, it's not a power of 2. Turn of mips and set wrapping to clamp to edge
 	    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
 	    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
@@ -473,47 +484,29 @@ function startup() {
     var coordsDiv = document.getElementById('coords');
     fovDiv = document.getElementById('fov');
     fovDiv.innerHTML = "fov: "+fov+"<sup>&#8728;</sup>";
-// 	canvas.onmousedown = function(ev) {   // Mouse is pressed
-	    
-// 	    var vx = ev.clientX; // x coordinate of a mouse pointer
-// 	    var vy = ev.clientY; // y coordinate of a mouse pointer
-// 	    var rect = ev.target.getBoundingClientRect() ;
-
-// 	    var xy = viewToWorld(vx, vy, rect);
-// 	    console.log("canvas coords:");
-// 	    console.log(xy);
-// 	    var xyz = worldToModel(xy);
-// 	    console.log("WebGL coords:");
-// 	    console.log(xyz);
-	    
-// 	    var radec = modelToRaDec(xyz);
-// 	    console.log("ra dec coords:");
-// 	    console.log(radec);
-// 	    console.log("------------------------");
-// 	}
 	
 	canvas.onmousemove = function(ev) {   // Mouse is pressed
-	    console.log("pwgl.projectionMatrix");
-	    console.log(pwgl.projectionMatrix);
+// 	    console.log("pwgl.projectionMatrix");
+// 	    console.log(pwgl.projectionMatrix);
 	    var vx = ev.clientX; // x coordinate of a mouse pointer
 	    var vy = ev.clientY; // y coordinate of a mouse pointer
 	    var rect = ev.target.getBoundingClientRect();	
 	    vxy = [vx, vy];
 	    
 	    var xy = viewToWorld(vxy[0], vxy[1], rect);
-	    console.log("xy");
-	    console.log(xy);
+// 	    console.log("xy");
+// 	    console.log(xy);
 	    xy[0] = xy[0] * 1/zoom;
     	xy[1] = xy[1] * 1/zoom;
 	    
-	    console.log("xy after");
-	    console.log(xy);
+// 	    console.log("xy after");
+// 	    console.log(xy);
 	    
 	    var xyz = worldToModel(xy); 
 	    
-	    console.log("xyz");
-	    console.log(xyz);
-	    console.log("------------------");
+// 	    console.log("xyz");
+// 	    console.log(xyz);
+// 	    console.log("------------------");
 	    if (mouseDown) {
 		    var deltaX = vx - lastMouseX
 		    var newRotationMatrix = mat4.create();
@@ -557,27 +550,28 @@ function degToRad(degrees) {
 
 
 function onMouseWheel(ev){
-	console.log("Scroll");
+// 	console.log("Scroll");
 	// WebKit
 	if ( ev.wheelDeltaY ) {
-		console.log("webkit zoom: "+ev.wheelDeltaY);
+// 		console.log("webkit zoom: "+ev.wheelDeltaY);
 
 		zoom -= ev.wheelDeltaY * 0.05;
 	// Opera / Explorer 9
 	} else if ( ev.wheelDelta ) {
-		console.log("explorer zoom: "+ev.wheelDelta);
+// 		console.log("explorer zoom: "+ev.wheelDelta);
 
 		zoom -= ev.wheelDelta * 0.05;
 	// Firefox
 	} else if ( ev.detail ) {
-		console.log("firefox ev zoom: "+ev.detail);
+// 		console.log("firefox ev zoom: "+ev.detail);
 
 		zoom += ev.detail * 0.03;
-		console.log("zoom: "+zoom);
+// 		console.log("zoom: "+zoom);
 	}
 	if (zoom<=1){
 		zoom = 1;
 	}
+	oldFov = fov;
 	fov = 180/zoom;
 	fovDiv.innerHTML = "fov: "+fov+"<sup>&#8728;</sup>";
 }
