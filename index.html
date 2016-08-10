@@ -65,7 +65,7 @@ canvasHeight = 600;
 var oldFov;
 var oldcc;
 var mapURL = ["http://skies.esac.esa.int/DSSColor/", "http://alasky.u-strasbg.fr/MellingerRGB/"];
-
+var loadedTextures = [];
 
 console.log("maxNPix: "+maxNPix);
 
@@ -156,22 +156,28 @@ function draw(){
 	var xyz = getCoordsCenter();
 	currentcc = modelToRaDec(xyz);
 // 	console.log(currentcc);
-	if (oldFov != fov){
-		if (fov <= 50 && oldFov > 50){
-			console.log("redraw");
+	if (!fovInRange()){
+		console.log("redraw");
 			setupBuffers();
 			setupTextures();
 			oldFov = fov;
-		}else if (fov > 50 && oldFov <= 50){
-			console.log("redraw");
-			setupBuffers();
-			setupTextures();
-			oldFov = fov;
-		}
-	}
+	}else if (mouseDown){
+		addTextures();
+    }
+// 	if (oldFov !== fov){
+// 		if (fov < 50 && oldFov >= 50){
+// 			console.log("redraw");
+// 			setupBuffers();
+// 			setupTextures();
+// 			oldFov = fov;
+// 		}else if (fov >= 50 && oldFov < 50){
+// 			console.log("redraw");
+// 			setupBuffers();
+// 			setupTextures();
+// 			oldFov = fov;
+// 		}
+// 	}
 	
-	
-
 	pwgl.requestId = requestAnimationFrame(draw);
 	
 	gl.viewport(0, 0, gl.viewportWidth, gl.viewportHeight);
@@ -385,41 +391,65 @@ function setupTextures(){
 	addTextures()
 }
 
+function fovInRange(){
+	if ( fov >= 50 && oldFov >= 50){
+		return true;
+	}
+	if ( fov < 50 && oldFov < 50){
+		return true;
+	}
+	return false;
+}
+
 function addTextures(){
-	var currMap = mapURL[0]; 
+	var currMap = mapURL[0];
+
 	// fullZoom
 	if (fov >=50){
+	 	if (fovInRange()){
+			return;
+		}
+		console.log("loading texture AllSky");
 		pwgl.texturesArray[0] = gl.createTexture();
 		loadImageForTexture(currMap+"/Norder3/Allsky.jpg", pwgl.texturesArray[0]);
 	}else{
+		console.log("loading single textures");
+		var toBeLoadedTextures = [];
 		var cc = getCoordsCenter();
 		var p = new Pointing(new Vec3(cc[0], cc[1], cc[2]));
 		var ccPixNo = this.healpix.ang2pix(p);
 		var neighbours = new Array();
-		var index = 0;
+		var index = -1;
+		if (loadedTextures.indexOf(ccPixNo) === -1){
+			console.log("Adding ccpix: "+ccPixNo);
+			toBeLoadedTextures[index+1] = ccPixNo;
+			index++;
+		}
 		for (var i=-1; i<=1.1;i=i+0.25){
 			for (var j=-1; j<=1;j=j+0.25){
 				var currPix = getPixNo(i,j);
-				if (neighbours.indexOf(currPix) == -1){
+				if (neighbours.indexOf(currPix) === -1){
 					neighbours.push(currPix);
-				}	
+					if (loadedTextures.indexOf(currPix) === -1){
+						toBeLoadedTextures[index+1] = currPix;
+						index++;
+					}
+				}
 			}
 		}
-		console.log("CC Pixel: "+ccPixNo);
-		console.log(neighbours);
-		
-		pwgl.texturesArray[ccPixNo] = gl.createTexture();
-		loadImageForTexture(currMap+"/Norder3/Dir0/Npix"+ccPixNo+".jpg", pwgl.texturesArray[ccPixNo]);
-		for (var i=0; i<neighbours.length;i++){
-			pwgl.texturesArray[neighbours[i]] = gl.createTexture();
-			loadImageForTexture(currMap+"/Norder3/Dir0/Npix"+neighbours[i]+".jpg", pwgl.texturesArray[neighbours[i]]);
+		for (var i=0; i<toBeLoadedTextures.length;i++){
+			pwgl.texturesArray[toBeLoadedTextures[i]] = gl.createTexture();
+			loadImageForTexture(currMap+"/Norder3/Dir0/Npix"+toBeLoadedTextures[i]+".jpg", pwgl.texturesArray[toBeLoadedTextures[i]]);
+			loadedTextures[loadedTextures.length+1] = toBeLoadedTextures[i];
 		}
 	}
 	
 }
 
+
+
 function getPixNo(x, y){
-	console.log("x: "+x+" y: "+y);
+// 	console.log("x: "+x+" y: "+y);
 	var xy = [x,y];
 	xy[0] = xy[0] * 1/zoom;
 	xy[1] = xy[1] * 1/zoom;
@@ -432,7 +462,7 @@ function getPixNo(x, y){
 	
 	var p = new Pointing(new Vec3(rcc[0], rcc[1], rcc[2]));
 	var pixNo = this.healpix.ang2pix(p);
-	console.log("pixNo: "+pixNo);
+// 	console.log("pixNo: "+pixNo);
 	return pixNo;
 }
 
@@ -661,12 +691,9 @@ function startup() {
 	    var decDMS = convertDec2DMS(radec[1]);
 	    coordsHMSDiv.innerHTML = raHMS[0]+" "+raHMS[1]+" "+raHMS[2]+" "+decDMS[0]+" "+decDMS[1]+" "+decDMS[2];
 	    
-	    if (mouseDown){
-// 	    	setupBuffers();
-			addTextures();
-// 	    	var xyz = getCoordsCenter();
-// 	    	oldcc = modelToRaDec(xyz);
-	    }
+// 	    if (mouseDown){
+// 			addTextures();
+// 	    }
 	}
 	
 	var container = document.getElementById("container");
