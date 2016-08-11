@@ -39,6 +39,7 @@
   
 	varying vec2 vTextureCoordinates;
 	uniform sampler2D uSampler;
+	uniform vec4 u_FragColor;
 
   	//varying vec4 vColor;
   	void main() {
@@ -49,7 +50,6 @@
 
 <script type="text/javascript">
 
-var fullZoom = true;
 var norder = 3;
 var nside = Math.pow(2, norder);
 var healpix = new Healpix(nside);
@@ -155,35 +155,21 @@ function loadShaderFromDOM(id) {
 function draw(){
 	var xyz = getCoordsCenter();
 	currentcc = modelToRaDec(xyz);
-// 	console.log(currentcc);
 	if (!fovInRange()){
 		console.log("redraw");
-			setupBuffers();
-			setupTextures();
-			oldFov = fov;
+		setupBuffers();
+		setupTextures();
+		oldFov = fov;
 	}else if (mouseDown){
 		addTextures();
     }
-// 	if (oldFov !== fov){
-// 		if (fov < 50 && oldFov >= 50){
-// 			console.log("redraw");
-// 			setupBuffers();
-// 			setupTextures();
-// 			oldFov = fov;
-// 		}else if (fov >= 50 && oldFov < 50){
-// 			console.log("redraw");
-// 			setupBuffers();
-// 			setupTextures();
-// 			oldFov = fov;
-// 		}
-// 	}
+
 	
 	pwgl.requestId = requestAnimationFrame(draw);
 	
 	gl.viewport(0, 0, gl.viewportWidth, gl.viewportHeight);
 	gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
 	
-// 	mat4.ortho(-1/zoom, 1/zoom, -1/zoom, 1/zoom, -1, 1, pwgl.projectionMatrix);
 	mat4.ortho(-1-(-1+1/zoom), 1-(1-1/zoom), -1-(-1+1/zoom), 1-(1-1/zoom), -1, 1, pwgl.projectionMatrix);
 	
 	mat4.identity(pwgl.modelViewMatrix);
@@ -213,20 +199,30 @@ function draw(){
     if (fov>=50){
     	gl.bindTexture(gl.TEXTURE_2D, pwgl.texturesArray[0]);
     	for (var i=0;i<maxNPix;i++){
-//         	gl.drawElements(gl.TRIANGLES, 6, 
-//                     gl.UNSIGNED_SHORT, 12*i);
-        	gl.drawElements(gl.TRIANGLES, 12, 
-                    gl.UNSIGNED_SHORT, 24*i);
+        	gl.drawElements(gl.TRIANGLES, 6, 
+                    gl.UNSIGNED_SHORT, 12*i);
+//         	gl.drawElements(gl.TRIANGLES, 12, 
+//                     gl.UNSIGNED_SHORT, 24*i);
         }	
-    }else{
+    }else {
     	for (var i=0;i<maxNPix;i++){
         	gl.bindTexture(gl.TEXTURE_2D, pwgl.texturesArray[i]);
-//         	gl.drawElements(gl.TRIANGLES, 6, 
-//                     gl.UNSIGNED_SHORT, 12*i);
-        	gl.drawElements(gl.TRIANGLES, 12, 
-                    gl.UNSIGNED_SHORT, 24*i);
+        	gl.drawElements(gl.TRIANGLES, 6, 
+                    gl.UNSIGNED_SHORT, 12*i);
+        	
+//         	gl.drawElements(gl.TRIANGLES, 12, 
+//                     gl.UNSIGNED_SHORT, 24*i);
         }	
     }
+    
+    
+//     gl.bindBuffer(gl.ARRAY_BUFFER, pwgl.vertexTextureCoordinateBuffer);
+//     for (var k=0;k<4;k++){
+//     	gl.uniform4f(pwgl.uniformFragColorLoc, 1.0, 0.0, 0.0, 1.0);
+//     	gl.vertexAttrib3f(pwgl.vertexPositionAttributeLoc, points[k][0], points[k][1], points[k][2]);
+//     	gl.drawArrays(gl.POINTS,0,4);
+//     }
+    
 }
 
 function uploadModelViewMatrixToShader() {
@@ -237,42 +233,45 @@ function uploadProjectionMatrixToShader() {
 	gl.uniformMatrix4fv(pwgl.uniformProjMatrixLoc, false, pwgl.projectionMatrix);
 }
 
+var points =[];
 function setupBuffers(){
+	
 	pwgl.vertexPositionBuffer = gl.createBuffer();
 	gl.bindBuffer(gl.ARRAY_BUFFER, pwgl.vertexPositionBuffer);
-	var vertexPosition = new Float32Array(15*maxNPix);
+	var vertexPosition = new Float32Array(12*maxNPix);
+// 	var vertexPosition = new Float32Array(15*maxNPix);
 	var facesVec3Array;
 	var p = [];
-	var epsilon = 0.004;
+// 	var epsilon = 0.001;
+	var epsilon = 0.0;
 	for (var i=0; i < maxNPix; i++){
 		facesVec3Array = new Array();
 		facesVec3Array = healpix.getBoundaries(i);
 
-		vertexPosition[15*i] = facesVec3Array[0].x ;
-		vertexPosition[15*i+1] = facesVec3Array[0].y;
-		vertexPosition[15*i+2] = facesVec3Array[0].z;
+		vertexPosition[12*i] = (facesVec3Array[0].x).toFixed(17) ;
+		vertexPosition[12*i+1] = (facesVec3Array[0].y).toFixed(17) ;
+		vertexPosition[12*i+2] = (facesVec3Array[0].z).toFixed(17) ;
 		
-		vertexPosition[15*i+3] = facesVec3Array[1].x;
-		vertexPosition[15*i+4] = facesVec3Array[1].y;
-		vertexPosition[15*i+5] = facesVec3Array[1].z;
+		vertexPosition[12*i+3] = (facesVec3Array[1].x).toFixed(17) ;
+		vertexPosition[12*i+4] = (facesVec3Array[1].y).toFixed(17) ;
+		vertexPosition[12*i+5] = (facesVec3Array[1].z).toFixed(17) ;
 		
-		vertexPosition[15*i+6] = facesVec3Array[2].x;
-		vertexPosition[15*i+7] = facesVec3Array[2].y;
-		vertexPosition[15*i+8] = facesVec3Array[2].z;
+		vertexPosition[12*i+6] = (facesVec3Array[2].x).toFixed(17) ;
+		vertexPosition[12*i+7] = (facesVec3Array[2].y).toFixed(17) ;
+		vertexPosition[12*i+8] = (facesVec3Array[2].z).toFixed(17) ;
 		
-		vertexPosition[15*i+9] = facesVec3Array[3].x;
-		vertexPosition[15*i+10] = facesVec3Array[3].y;
-		vertexPosition[15*i+11] = facesVec3Array[3].z;
+		vertexPosition[12*i+9] = (facesVec3Array[3].x).toFixed(17) ;
+		vertexPosition[12*i+10] = (facesVec3Array[3].y).toFixed(17) ;
+		vertexPosition[12*i+11] = (facesVec3Array[3].z).toFixed(17) ;
 		
-		p.x = (facesVec3Array[0].x + facesVec3Array[2].x)/2 +epsilon;
-		p.y = (facesVec3Array[0].y + facesVec3Array[2].y)/2 +epsilon;
-		p.z = (facesVec3Array[0].z + facesVec3Array[2].z)/2 +epsilon;
-		//TODO: add a little epsilon to p
+// 		p.x = (facesVec3Array[0].x + facesVec3Array[2].x)/2 +epsilon;
+// 		p.y = (facesVec3Array[0].y + facesVec3Array[2].y)/2 +epsilon;
+// 		p.z = (facesVec3Array[0].z + facesVec3Array[2].z)/2 +epsilon;
 		
-		vertexPosition[15*i+12] = p.x;
-		vertexPosition[15*i+13] = p.y;
-		vertexPosition[15*i+14] = p.z;
-	
+// 		vertexPosition[15*i+12] = p.x;
+// 		vertexPosition[15*i+13] = p.y;
+// 		vertexPosition[15*i+14] = p.z;
+
 	}
 	gl.bufferData(gl.ARRAY_BUFFER, vertexPosition, gl.STATIC_DRAW);
 	pwgl.VERTEX_POS_BUF_ITEM_SIZE = 3;
@@ -281,7 +280,8 @@ function setupBuffers(){
 	
     pwgl.vertexTextureCoordinateBuffer = gl.createBuffer();
     gl.bindBuffer(gl.ARRAY_BUFFER, pwgl.vertexTextureCoordinateBuffer);
-    var textureCoordinates = new Float32Array(10*maxNPix);
+    var textureCoordinates = new Float32Array(8*maxNPix);
+//     var textureCoordinates = new Float32Array(10*maxNPix);
     if (fov>=50){
     	//0.037037037
     	var s_step=1/27;
@@ -292,16 +292,16 @@ function setupBuffers(){
     	var tindex = 0;
     	for (var i=0; i < maxNPix; i++){
         	// [1, 0],[1, 1],[0, 1],[0, 0]
-        	textureCoordinates[10*i] = (s_step + (s_step * sindex)).toFixed(9);
-        	textureCoordinates[10*i+1] = (1 - (t_step + t_step * tindex)).toFixed(9);
-        	textureCoordinates[10*i+2] = (s_step + (s_step * sindex)).toFixed(9);
-        	textureCoordinates[10*i+3] = (1 - (t_step * tindex)).toFixed(9);
-        	textureCoordinates[10*i+4] = (s_step * sindex).toFixed(9);
-        	textureCoordinates[10*i+5] = (1 - (t_step * tindex)).toFixed(9);
-        	textureCoordinates[10*i+6] = (s_step * sindex).toFixed(9);
-        	textureCoordinates[10*i+7] = (1 - (t_step + t_step * tindex)).toFixed(9);
-        	textureCoordinates[10*i+8] = ((s_step/2) + s_step * sindex).toFixed(9);
-        	textureCoordinates[10*i+9] = (1 - (t_step/2) - t_step * tindex ).toFixed(9);
+        	textureCoordinates[8*i] = (s_step + (s_step * sindex)).toFixed(9);
+        	textureCoordinates[8*i+1] = (1 - (t_step + t_step * tindex)).toFixed(9);
+        	textureCoordinates[8*i+2] = (s_step + (s_step * sindex)).toFixed(9);
+        	textureCoordinates[8*i+3] = (1 - (t_step * tindex)).toFixed(9);
+        	textureCoordinates[8*i+4] = (s_step * sindex).toFixed(9);
+        	textureCoordinates[8*i+5] = (1 - (t_step * tindex)).toFixed(9);
+        	textureCoordinates[8*i+6] = (s_step * sindex).toFixed(9);
+        	textureCoordinates[8*i+7] = (1 - (t_step + t_step * tindex)).toFixed(9);
+//         	textureCoordinates[10*i+8] = ((s_step/2) + s_step * sindex).toFixed(9);
+//         	textureCoordinates[10*i+9] = (1 - (t_step/2) - t_step * tindex ).toFixed(9);
         	sindex++;
         	if(sindex == 27){
         		tindex++;
@@ -311,16 +311,16 @@ function setupBuffers(){
     }else{
     	for (var i=0; i < maxNPix; i++){
         	// [1, 0],[1, 1],[0, 1],[0, 0]
-        	textureCoordinates[10*i] = 1.0;
-        	textureCoordinates[10*i+1] = 0.0;
-        	textureCoordinates[10*i+2] = 1.0;
-        	textureCoordinates[10*i+3] = 1.0;
-        	textureCoordinates[10*i+4] = 0.0;
-        	textureCoordinates[10*i+5] = 1.0;
-        	textureCoordinates[10*i+6] = 0.0;
-        	textureCoordinates[10*i+7] = 0.0;
-        	textureCoordinates[10*i+8] = 0.5;
-        	textureCoordinates[10*i+9] = 0.5;
+        	textureCoordinates[8*i] = 1.0;
+        	textureCoordinates[8*i+1] = 0.0;
+        	textureCoordinates[8*i+2] = 1.0;
+        	textureCoordinates[8*i+3] = 1.0;
+        	textureCoordinates[8*i+4] = 0.0;
+        	textureCoordinates[8*i+5] = 1.0;
+        	textureCoordinates[8*i+6] = 0.0;
+        	textureCoordinates[8*i+7] = 0.0;
+//         	textureCoordinates[10*i+8] = 0.5;
+//         	textureCoordinates[10*i+9] = 0.5;
         }
     }
     
@@ -331,44 +331,39 @@ function setupBuffers(){
 	
 	pwgl.vertexIndexBuffer = gl.createBuffer();
     gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, pwgl.vertexIndexBuffer);
-    var vertexIndices = new Uint16Array(12*maxNPix);
+//     var vertexIndices = new Uint16Array(12*maxNPix);
+    var vertexIndices = new Uint16Array(6*maxNPix);
     var baseFaceIndex = 0; 
     for (var j=0; j< maxNPix; j++){
     	
-    	vertexIndices[12*j] = baseFaceIndex + 4;
-    	vertexIndices[12*j+1] = baseFaceIndex;
-    	vertexIndices[12*j+2] = baseFaceIndex + 1;
+//     	vertexIndices[12*j] = baseFaceIndex + 4;
+//     	vertexIndices[12*j+1] = baseFaceIndex;
+//     	vertexIndices[12*j+2] = baseFaceIndex + 1;
     	
-    	vertexIndices[12*j+3] = baseFaceIndex + 4;
-    	vertexIndices[12*j+4] = baseFaceIndex + 1;
-    	vertexIndices[12*j+5] = baseFaceIndex + 2;
-    	
-    	vertexIndices[12*j+6] = baseFaceIndex + 4;
-    	vertexIndices[12*j+7] = baseFaceIndex + 2;
-    	vertexIndices[12*j+8] = baseFaceIndex + 3;
-    	
-    	vertexIndices[12*j+9] = baseFaceIndex + 4;
-    	vertexIndices[12*j+10] = baseFaceIndex + 3;
-    	vertexIndices[12*j+11] = baseFaceIndex;
-    	
-    	
-//     	vertexIndices[12*j] = baseFaceIndex;
-//     	vertexIndices[12*j+1] = baseFaceIndex + 1;
-//     	vertexIndices[12*j+2] = baseFaceIndex + 4;
-    	
-//     	vertexIndices[12*j+3] = baseFaceIndex;
-//     	vertexIndices[12*j+4] = baseFaceIndex + 4;
-//     	vertexIndices[12*j+5] = baseFaceIndex + 3;
+//     	vertexIndices[12*j+3] = baseFaceIndex + 4;
+//     	vertexIndices[12*j+4] = baseFaceIndex + 1;
+//     	vertexIndices[12*j+5] = baseFaceIndex + 2;
     	
 //     	vertexIndices[12*j+6] = baseFaceIndex + 4;
-//     	vertexIndices[12*j+7] = baseFaceIndex + 1;
-//     	vertexIndices[12*j+8] = baseFaceIndex + 2;
+//     	vertexIndices[12*j+7] = baseFaceIndex + 2;
+//     	vertexIndices[12*j+8] = baseFaceIndex + 3;
     	
 //     	vertexIndices[12*j+9] = baseFaceIndex + 4;
-//     	vertexIndices[12*j+10] = baseFaceIndex + 2;
-//     	vertexIndices[12*j+11] = baseFaceIndex + 3;
+//     	vertexIndices[12*j+10] = baseFaceIndex + 3;
+//     	vertexIndices[12*j+11] = baseFaceIndex;
+    	
+    	
+    	vertexIndices[6*j] = baseFaceIndex;
+    	vertexIndices[6*j+1] = baseFaceIndex + 1;
+    	vertexIndices[6*j+2] = baseFaceIndex + 2;
+    	
+    	vertexIndices[6*j+3] = baseFaceIndex;
+    	vertexIndices[6*j+4] = baseFaceIndex + 2;
+    	vertexIndices[6*j+5] = baseFaceIndex + 3;
     		
-    	baseFaceIndex = baseFaceIndex+5;
+//     	baseFaceIndex = baseFaceIndex+5;
+    	baseFaceIndex = baseFaceIndex+4;
+    	
     }
     gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, vertexIndices, gl.STATIC_DRAW);
     pwgl.VERTEX_INDEX_BUF_ITEM_SIZE = 1;
@@ -388,7 +383,7 @@ function setupBuffers(){
 
 function setupTextures(){
 	pwgl.texturesArray = [];
-	addTextures()
+	addTextures();
 }
 
 function fovInRange(){
@@ -402,7 +397,7 @@ function fovInRange(){
 }
 
 function addTextures(){
-	var currMap = mapURL[0];
+	var currMap = mapURL[1];
 
 	// fullZoom
 	if (fov >=50){
@@ -412,12 +407,17 @@ function addTextures(){
 		console.log("loading texture AllSky");
 		pwgl.texturesArray[0] = gl.createTexture();
 		loadImageForTexture(currMap+"/Norder3/Allsky.jpg", pwgl.texturesArray[0]);
-	}else{
+		loadedTextures = [];
+	}else if (mouseDown || !fovInRange()){
+		
+	
 		console.log("loading single textures");
 		var toBeLoadedTextures = [];
 		var cc = getCoordsCenter();
-		var p = new Pointing(new Vec3(cc[0], cc[1], cc[2]));
-		var ccPixNo = this.healpix.ang2pix(p);
+		console.log("center coords in texture: "+cc);
+// 		var p = new Pointing(new Vec3(cc[0], cc[1], cc[2]));
+// 		var ccPixNo = this.healpix.ang2pix(p);
+		var ccPixNo = getPixNo(cc);;
 		var neighbours = new Array();
 		var index = -1;
 		if (loadedTextures.indexOf(ccPixNo) === -1){
@@ -427,7 +427,15 @@ function addTextures(){
 		}
 		for (var i=-1; i<=1.1;i=i+0.25){
 			for (var j=-1; j<=1;j=j+0.25){
-				var currPix = getPixNo(i,j);
+				var xy = [i * 1/zoom,j * 1/zoom];
+				var xyz = worldToModel(xy);
+			    var rxyz = [];
+			    rxyz[0] = skyRotationMatrix[0] * xyz[0] + skyRotationMatrix[1] * xyz[1] + skyRotationMatrix[2] * xyz[2];
+			    rxyz[1] = skyRotationMatrix[4] * xyz[0] + skyRotationMatrix[5] * xyz[1] + skyRotationMatrix[6] * xyz[2];
+			    rxyz[2] = skyRotationMatrix[8] * xyz[0] + skyRotationMatrix[9] * xyz[1] + skyRotationMatrix[10] * xyz[2];
+				
+				
+				var currPix = getPixNo(rxyz);
 				if (neighbours.indexOf(currPix) === -1){
 					neighbours.push(currPix);
 					if (loadedTextures.indexOf(currPix) === -1){
@@ -442,27 +450,35 @@ function addTextures(){
 			loadImageForTexture(currMap+"/Norder3/Dir0/Npix"+toBeLoadedTextures[i]+".jpg", pwgl.texturesArray[toBeLoadedTextures[i]]);
 			loadedTextures[loadedTextures.length+1] = toBeLoadedTextures[i];
 		}
+// 		console.log(toBeLoadedTextures);
 	}
 	
 }
 
 
 
-function getPixNo(x, y){
+function getPixNo(xyz){
 // 	console.log("x: "+x+" y: "+y);
-	var xy = [x,y];
-	xy[0] = xy[0] * 1/zoom;
-	xy[1] = xy[1] * 1/zoom;
+// 	var xy = [x,y];
+// 	xy[0] = xy[0] * 1/zoom;
+// 	xy[1] = xy[1] * 1/zoom;
     
-    var xyz = worldToModel(xy); 
-    var rcc = [];
-    rcc[0] = skyRotationMatrix[0] * xyz[0] + skyRotationMatrix[1] * xyz[1] + skyRotationMatrix[2] * xyz[2];
-    rcc[1] = skyRotationMatrix[4] * xyz[0] + skyRotationMatrix[5] * xyz[1] + skyRotationMatrix[6] * xyz[2];
-    rcc[2] = skyRotationMatrix[8] * xyz[0] + skyRotationMatrix[9] * xyz[1] + skyRotationMatrix[10] * xyz[2];
-	
-	var p = new Pointing(new Vec3(rcc[0], rcc[1], rcc[2]));
+//     var xyz = worldToModel(xy);
+//     console.log("Model coords: "+xyz);
+//     var rcc = [];
+//     rcc[0] = skyRotationMatrix[0] * xyz[0] + skyRotationMatrix[1] * xyz[1] + skyRotationMatrix[2] * xyz[2];
+//     rcc[1] = skyRotationMatrix[4] * xyz[0] + skyRotationMatrix[5] * xyz[1] + skyRotationMatrix[6] * xyz[2];
+//     rcc[2] = skyRotationMatrix[8] * xyz[0] + skyRotationMatrix[9] * xyz[1] + skyRotationMatrix[10] * xyz[2];
+//     console.log("Model coords rot: "+rcc);
+	var p = new Pointing(new Vec3(xyz[0], xyz[1], xyz[2]));
 	var pixNo = this.healpix.ang2pix(p);
-// 	console.log("pixNo: "+pixNo);
+// 	if (pixNo === 522){
+// 		var hpl = new Hploc(p);
+// 		console.log("Pointing: [phi]"+p.phi+" [theta]"+p.theta);
+// 		console.log("pixNo: "+pixNo+" HPLoc: [phi]"+hpl.phi+" [z]"+hpl.z+" [sth]"+hpl.sth);
+// 	}
+	
+	console.log("pixNo: "+pixNo);
 	return pixNo;
 }
 
@@ -516,7 +532,9 @@ function setupShaders() {
 	  pwgl.uniformMVMatrixLoc = gl.getUniformLocation(shaderProgram, "uMVMatrix");
 	  pwgl.uniformProjMatrixLoc = gl.getUniformLocation(shaderProgram, "uPMatrix");
 	  pwgl.uniformSamplerLoc = gl.getUniformLocation(shaderProgram, "uPMatrix");
-
+	  pwgl.uniformFragColorLoc = gl.getUniformLocation(shaderProgram, "u_FragColor");
+	  
+	  
 	  gl.enableVertexAttribArray(pwgl.vertexPositionAttributeLoc);
 	  gl.enableVertexAttribArray(pwgl.vertexTextureAttributeLoc);
 
@@ -551,19 +569,24 @@ function handleContextRestored(event){
 
 function getCoordsCenter(){
 // 	console.log("getCoordsCenter()");
-	var vx = canvasWidth/2; // x coordinate of a mouse pointer
-    var vy = canvasHeight/2; // y coordinate of a mouse pointer
-    vxy = [vx, vy];
+// 	var vx = canvasWidth/2; // x coordinate of a mouse pointer
+//     var vy = canvasHeight/2; // y coordinate of a mouse pointer
+//     var vxy = [vx, vy];
+
+	var vxy = [offset.left + canvas.width / 2, offset.top + canvas.height / 2];
+	
+	var rcc = convertXY2World(vxy[0],vxy[1]);
+//     var vxy = [0, 0];
     
-    var xy = viewToWorld(vxy[0], vxy[1]);
-    xy[0] = xy[0] * 1/zoom;
-	xy[1] = xy[1] * 1/zoom;
+//     var xy = viewToWorld(vxy[0], vxy[1]);
+//     xy[0] = xy[0] * 1/zoom;
+// 	xy[1] = xy[1] * 1/zoom;
     
-    var xyz = worldToModel(xy); 
-    var rcc = [];
-    rcc[0] = skyRotationMatrix[0] * xyz[0] + skyRotationMatrix[1] * xyz[1] + skyRotationMatrix[2] * xyz[2];
-    rcc[1] = skyRotationMatrix[4] * xyz[0] + skyRotationMatrix[5] * xyz[1] + skyRotationMatrix[6] * xyz[2];
-    rcc[2] = skyRotationMatrix[8] * xyz[0] + skyRotationMatrix[9] * xyz[1] + skyRotationMatrix[10] * xyz[2];
+//     var xyz = worldToModel(xy); 
+//     var rcc = [];
+//     rcc[0] = skyRotationMatrix[0] * xyz[0] + skyRotationMatrix[1] * xyz[1] + skyRotationMatrix[2] * xyz[2];
+//     rcc[1] = skyRotationMatrix[4] * xyz[0] + skyRotationMatrix[5] * xyz[1] + skyRotationMatrix[6] * xyz[2];
+//     rcc[2] = skyRotationMatrix[8] * xyz[0] + skyRotationMatrix[9] * xyz[1] + skyRotationMatrix[10] * xyz[2];
 //     console.log(rcc);
     return rcc; 
 }
@@ -596,8 +619,9 @@ function onMouseWheel(ev){
 }
 
 function handleMouseDown(event) {
-	console.log("center coords:");
-	console.log(getCoordsCenter(event));
+	console.log("center coords:"+getCoordsCenter());
+	
+// 	console.log(getCoordsCenter());
     mouseDown = true;
     lastMouseX = event.clientX;
     lastMouseY = event.clientY;
@@ -606,8 +630,12 @@ function handleMouseDown(event) {
     console.log("clicked coords:");
     console.log(rxyz);
     
-    var xy = viewToWorld(event.clientX, event.clientY);
-    var pixNo = getPixNo(xy[0], xy[1]);
+//     console.log("HTML coords: "+event.clientX+" "+event.clientY);
+//     var xy = viewToWorld(event.clientX, event.clientY);
+//     console.log("World coords: "+xy);
+//     var pixNo = getPixNo(xy[0], xy[1]);
+	var pixNo = getPixNo(rxyz);
+    console.log("pixNo clicked: "+pixNo);
 }
 
 
@@ -623,19 +651,7 @@ function onWindowResized(ev){
 
 var offset;
 
-function viewToWorld(vx, vy){
-	var x = ((vx - offset.left) - canvas.width/2)/(canvas.width/2);
-    var y = (canvas.height/2 - (vy - offset.top))/(canvas.height/2);
-    return [x, y];
-}
 
-function worldToModel(xy){
-	var x = xy[0];
-	var y = xy[1];
-	var z = Math.sqrt(1 - xy[0]*xy[0] - xy[1]*xy[1]);
-	
-	return [x, y, z];
-}
 
 function modelToRaDec(xyz){
 	var ra, dec;
@@ -684,7 +700,7 @@ function startup() {
 	
 	canvas.onmousemove = function(ev) {   
 
-		var rxyz = convertXY2World(ev.clientX, ev.clientY);;
+		var rxyz = rotateViewXY(ev.clientX, ev.clientY);;
 	    var radec = modelToRaDec(rxyz);
 	    coordsDiv.innerHTML = "ra: "+radec[0]+" dec: "+radec[1];
 	    var raHMS = convertRa2HMS(radec[0]);
@@ -716,6 +732,23 @@ function convertXY2World(x,y){
 	xy[1] = xy[1] * 1/zoom;
     
     var xyz = worldToModel(xy);
+    var rxyz = [];
+    rxyz[0] = skyRotationMatrix[0] * xyz[0] + skyRotationMatrix[1] * xyz[1] + skyRotationMatrix[2] * xyz[2];
+    rxyz[1] = skyRotationMatrix[4] * xyz[0] + skyRotationMatrix[5] * xyz[1] + skyRotationMatrix[6] * xyz[2];
+    rxyz[2] = skyRotationMatrix[8] * xyz[0] + skyRotationMatrix[9] * xyz[1] + skyRotationMatrix[10] * xyz[2];
+    return rxyz;
+}
+
+function rotateViewXY(x,y){
+	var vx = x; // x coordinate of a mouse pointer
+    var vy = y; // y coordinate of a mouse pointer
+    vxy = [vx, vy];
+    
+    var xy = viewToWorld(vxy[0], vxy[1]);
+    xy[0] = xy[0] * 1/zoom;
+	xy[1] = xy[1] * 1/zoom;
+    
+    var xyz = worldToModel(xy);
     if (mouseDown) {
 	    var deltaX = vx - lastMouseX
 	    var newRotationMatrix = mat4.create();
@@ -735,6 +768,20 @@ function convertXY2World(x,y){
     rxyz[1] = skyRotationMatrix[4] * xyz[0] + skyRotationMatrix[5] * xyz[1] + skyRotationMatrix[6] * xyz[2];
     rxyz[2] = skyRotationMatrix[8] * xyz[0] + skyRotationMatrix[9] * xyz[1] + skyRotationMatrix[10] * xyz[2];
     return rxyz;
+}
+
+function viewToWorld(vx, vy){
+	var x = ((vx - offset.left) - canvas.width/2)/(canvas.width/2);
+    var y = (canvas.height/2 - (vy - offset.top))/(canvas.height/2);
+    return [x, y];
+}
+
+function worldToModel(xy){
+	var x = xy[0];
+	var y = xy[1];
+	var z = Math.sqrt(1 - xy[0]*xy[0] - xy[1]*xy[1]);
+	
+	return [x, y, z];
 }
 
 function convertDec2DMS(dec){
