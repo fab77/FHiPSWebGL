@@ -46,8 +46,12 @@
 		vec4 color0 = texture2D(uSampler0, vTextureCoordinates);
 		vec4 color1 = texture2D(uSampler1, vTextureCoordinates);
 		//gl_FragColor = vec4(color0.rgb, 0.5) * color1;
-		gl_FragColor = mix(vec4(color0.rgb, 0.8), color1, 0.5);
-		
+		//gl_FragColor = mix(vec4(color0.rgb, 0.8), color1, 0.5);
+		//float​​ myfactor = 8.0;
+float factor0 = 1.0;
+vec3 finalColor = vec3(color0.x/factor0, color0.y/factor0, color0.z /factor0); 
+gl_FragColor = mix(vec4(finalColor, 1), color1, 0.5);
+
   	} 
 </script>
 

@@ -506,12 +506,12 @@ function loadImageForTexture(url, texture, texunit){
 	image.crossOrigin = "anonymous";
 	image.src=url;
 	
-	if (texunit == 0){
-		image.style.filter       = "alpha(opacity=15)";
-		image.style.MozOpacity   = "0.15";
-		image.style.opacity      = "0.15";
-		image.style.KhtmlOpacity = "0.15";
-	}
+//	if (texunit == 0){
+//		image.style.filter       = "alpha(opacity=15)";
+//		image.style.MozOpacity   = "0.15";
+//		image.style.opacity      = "0.15";
+//		image.style.KhtmlOpacity = "0.15";
+//	}
 }
 var g_texUnit0 = false, g_texUnit1 = false;
 function textureFinishedLoading(image, texture, texunit){
