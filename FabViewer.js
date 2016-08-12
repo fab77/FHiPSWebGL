@@ -5,7 +5,7 @@ var norder = 3;
 var nside = Math.pow(2, norder);
 var healpix = new Healpix(nside);
 var maxNPix = healpix.getNPix();
-var skyRotationMatrix = mat4.create();
+ 
 var mouseDown = false;
 var lastMouseX, lastMouseY;
 var zoom = 1;
@@ -15,7 +15,7 @@ canvasWidth = 600;
 canvasHeight = 600;
 var oldFov;
 var oldcc;
-var defaultMapURL = "http://alasky.u-strasbg.fr/MellingerRGB/";
+var defaultMapURL = "http://skies.esac.esa.int/DSSColor/";
 var currMapURL;
 
 
@@ -24,9 +24,47 @@ console.log("maxNPix: "+maxNPix);
 var gl;
 var canvas;
 
-var pwgl = {};
-pwgl.ongoingImageLoads = [];
-pwgl.loadedTextures = [];
+//var pwgl = {};
+//pwgl.ongoingImageLoads = [];
+//pwgl.loadedTextures = [];
+//pwgl.skyRotationMatrix = mat4.create();
+
+var pwgl = {
+		"ongoingImageLoads0" : [],
+		"ongoingImageLoads1" : [],
+		"loadedTextures" : [],
+		"texturesArray0" : [],
+		"texturesArray1" : [],
+		"requestId" : "",
+		"projectionMatrix" : mat4.create(),
+		"modelViewMatrix" : mat4.create(),
+		"skyRotationMatrix": mat4.create(),
+		"modelViewMatrixStack" : [],
+//		"vertexPositionBuffer" : gl.createBuffer(),
+//		"vertexTextureCoordinateBuffer" : gl.createBuffer(),
+//		"vertexIndexBuffer" : gl.createBuffer(),
+		"vertexPositionBuffer" : "",
+		"vertexTextureCoordinateBuffer" : "",
+		"vertexIndexBuffer" : "",
+		"VERTEX_POS_BUF_ITEM_SIZE" : 3,
+		"VERTEX_POS_BUF_NUM_ITEMS" : 0,
+		"VERTEX_TEX_COORD_BUF_ITEM_SIZE" : 2,
+		"VERTEX_TEX_COORD_BUF_NUM_ITEMS" : 0,
+		"VERTEX_INDEX_BUF_ITEM_SIZE" : 1,
+		"VERTEX_INDEX_BUF_NUM_ITEMS" : 0,
+		"vertexTextureAttributeLoc" : "",
+		"vertexPositionAttributeLoc" : "",
+		"uniformMVMatrixLoc": "",
+		"uniformProjMatrixLoc": "",
+		"uniformSampler0Loc": "",
+		"uniformSampler1Loc": ""
+//		"vertexTextureAttributeLoc" : gl.getAttribLocation(shaderProgram, 'aTextureCoordinates'),
+//		"vertexPositionAttributeLoc" : gl.getAttribLocation(shaderProgram, 'aVertexPosition'),
+//		"uniformMVMatrixLoc": gl.getUniformLocation(shaderProgram, 'uMVMatrix'),
+//		"uniformProjMatrixLoc": gl.getUniformLocation(shaderProgram, 'uPMatrix'),
+//		"uniformSampler0Loc": gl.getUniformLocation(shaderProgram, 'uSampler0'),
+//		"uniformSampler1Loc": gl.getUniformLocation(shaderProgram, 'uSampler1')
+}
 
 function initWebGL(canvas) {
     gl = null;
@@ -128,12 +166,12 @@ function draw(){
 	
 	mat4.identity(pwgl.modelViewMatrix);
 
-    mat4.multiply(pwgl.modelViewMatrix, skyRotationMatrix);
+    mat4.multiply(pwgl.modelViewMatrix, pwgl.skyRotationMatrix);
 	
 	
 	uploadModelViewMatrixToShader();
 	uploadProjectionMatrixToShader();
-	gl.uniform1i(pwgl.uniformSamplerLoc, 0);
+//	gl.uniform1i(pwgl.uniformSamplerLoc, 0);
     
     gl.bindBuffer(gl.ARRAY_BUFFER, pwgl.vertexPositionBuffer);
     gl.vertexAttribPointer(pwgl.vertexPositionAttributeLoc,
@@ -148,22 +186,30 @@ function draw(){
     
     gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, pwgl.vertexIndexBuffer);
     
-    gl.activeTexture(gl.TEXTURE0);
+    
     
     if (fov>=50){
-    	gl.bindTexture(gl.TEXTURE_2D, pwgl.texturesArray[0]);
-    	for (var i=0;i<maxNPix;i++){
-        	gl.drawElements(gl.TRIANGLES, 6, 
-                    gl.UNSIGNED_SHORT, 12*i);
-//         	gl.drawElements(gl.TRIANGLES, 12, 
-//                     gl.UNSIGNED_SHORT, 24*i);
-        }	
+		if (g_texUnit0 && g_texUnit1) {
+			gl.activeTexture(gl.TEXTURE0);
+			gl.bindTexture(gl.TEXTURE_2D, pwgl.texturesArray0[0]);
+			gl.activeTexture(gl.TEXTURE1);
+			gl.bindTexture(gl.TEXTURE_2D, pwgl.texturesArray1[0]);
+        	for (var i=0;i<maxNPix;i++){
+            	gl.drawElements(gl.TRIANGLES, 6, 
+                        gl.UNSIGNED_SHORT, 12*i);
+//             	gl.drawElements(gl.TRIANGLES, 12, 
+//                         gl.UNSIGNED_SHORT, 24*i);
+            }	
+    	}
+    	
+    		
     }else {
+    	gl.activeTexture(gl.TEXTURE0);
+    	
     	for (var i=0;i<maxNPix;i++){
-        	gl.bindTexture(gl.TEXTURE_2D, pwgl.texturesArray[i]);
+    		gl.bindTexture(gl.TEXTURE_2D, pwgl.texturesArray0[i]);
         	gl.drawElements(gl.TRIANGLES, 6, 
                     gl.UNSIGNED_SHORT, 12*i);
-        	
 //         	gl.drawElements(gl.TRIANGLES, 12, 
 //                     gl.UNSIGNED_SHORT, 24*i);
         }	
@@ -341,7 +387,8 @@ function changeSkyURL(skyURL){
 }
 
 function setupTextures(forceReload){
-	pwgl.texturesArray = [];
+	pwgl.texturesArray0 = [];
+	pwgl.texturesArray1 = [];
 	pwgl.loadedTextures.splice(0, pwgl.loadedTextures.length);
 //	pwgl.loadedTextures = [];
 	console.log("setupTexture "+pwgl.loadedTextures );
@@ -369,12 +416,25 @@ function addTextures(forceReload){
 			return;
 		}
 		console.log("loading texture AllSky");
-		pwgl.texturesArray[0] = gl.createTexture();
-		loadImageForTexture(currMap+"/Norder3/Allsky.jpg", pwgl.texturesArray[0]);
+		pwgl.texturesArray0[0] = gl.createTexture();
+		loadImageForTexture("http://skies.esac.esa.int/AllWISEColor/Norder3/Allsky.jpg", pwgl.texturesArray0[0], 0);
+		
+		pwgl.texturesArray1[0] = gl.createTexture();
+		loadImageForTexture(currMap+"/Norder3/Allsky.jpg", pwgl.texturesArray1[0], 1);
+		
+		
+		
+//		pwgl.texturesArray[0] = gl.createTexture();
+//		loadImageForTexture("http://alasky.u-strasbg.fr/MellingerRGB/Norder3/Allsky.jpg", pwgl.texturesArray[0],1);
+//		loadImageForTexture("http://skies.esac.esa.int/DSSColor/Norder3/Allsky.jpg", pwgl.texturesArray1[0],0);
+//		pwgl.texturesArray1[0] = gl.createTexture();
+//		loadImageForTexture("http://skies.esac.esa.int/DSSColor/Norder3/Allsky.jpg", pwgl.texturesArray1[0],0);
+//		loadImageForTexture("http://skies.esac.esa.int/IRISColor/Norder3/Allsky.jpg", pwgl.texturesArray1[0],1);
+		
 		pwgl.loadedTextures = [];
 	}else if (mouseDown || !fovInRange() || forceReload){
 		if (forceReload){
-			pwgl.texturesArray.splice(0, pwgl.texturesArray.length);
+			pwgl.texturesArray0.splice(0, pwgl.texturesArray0.length);
 		}
 			
 	
@@ -395,9 +455,9 @@ function addTextures(forceReload){
 				var xy = [i * 1/zoom,j * 1/zoom];
 				var xyz = worldToModel(xy);
 			    var rxyz = [];
-			    rxyz[0] = skyRotationMatrix[0] * xyz[0] + skyRotationMatrix[1] * xyz[1] + skyRotationMatrix[2] * xyz[2];
-			    rxyz[1] = skyRotationMatrix[4] * xyz[0] + skyRotationMatrix[5] * xyz[1] + skyRotationMatrix[6] * xyz[2];
-			    rxyz[2] = skyRotationMatrix[8] * xyz[0] + skyRotationMatrix[9] * xyz[1] + skyRotationMatrix[10] * xyz[2];
+			    rxyz[0] = pwgl.skyRotationMatrix[0] * xyz[0] + pwgl.skyRotationMatrix[1] * xyz[1] + pwgl.skyRotationMatrix[2] * xyz[2];
+			    rxyz[1] = pwgl.skyRotationMatrix[4] * xyz[0] + pwgl.skyRotationMatrix[5] * xyz[1] + pwgl.skyRotationMatrix[6] * xyz[2];
+			    rxyz[2] = pwgl.skyRotationMatrix[8] * xyz[0] + pwgl.skyRotationMatrix[9] * xyz[1] + pwgl.skyRotationMatrix[10] * xyz[2];
 				
 				
 				var currPix = getPixNo(rxyz);
@@ -409,8 +469,8 @@ function addTextures(forceReload){
 			}
 		}
 		for (var i=0; i<toBeLoadedTextures.length;i++){
-			pwgl.texturesArray[toBeLoadedTextures[i]] = gl.createTexture();
-			loadImageForTexture(currMap+"/Norder3/Dir0/Npix"+toBeLoadedTextures[i]+".jpg", pwgl.texturesArray[toBeLoadedTextures[i]]);
+			pwgl.texturesArray0[toBeLoadedTextures[i]] = gl.createTexture();
+			loadImageForTexture(currMap+"/Norder3/Dir0/Npix"+toBeLoadedTextures[i]+".jpg", pwgl.texturesArray0[toBeLoadedTextures[i]]);
 			
 		}
 	}
@@ -426,33 +486,70 @@ function getPixNo(xyz){
 	return pixNo;
 }
 
-function loadImageForTexture(url, texture){
+function loadImageForTexture(url, texture, texunit){
 	var image = new Image();
 	image.onload = function(){
-		pwgl.ongoingImageLoads.splice(pwgl.ongoingImageLoads.indexOf(image), 1);
-		textureFinishedLoading(image, texture);
+		if (texunit == 0){
+			pwgl.ongoingImageLoads0.splice(pwgl.ongoingImageLoads0.indexOf(image), 1);	
+		}else if (texunit == 1){
+			pwgl.ongoingImageLoads1.splice(pwgl.ongoingImageLoads1.indexOf(image), 1);
+		}
+		textureFinishedLoading(image, texture, texunit);
 	}
-	pwgl.ongoingImageLoads.push(image);
+	if (texunit == 0){
+		pwgl.ongoingImageLoads0.push(image);	
+	}else if (texunit == 1){
+		pwgl.ongoingImageLoads1.push(image);
+	}
+		
+	
 	image.crossOrigin = "anonymous";
 	image.src=url;
+	
+	if (texunit == 0){
+		image.style.filter       = "alpha(opacity=15)";
+		image.style.MozOpacity   = "0.15";
+		image.style.opacity      = "0.15";
+		image.style.KhtmlOpacity = "0.15";
+	}
 }
-
-function textureFinishedLoading(image, texture){
+var g_texUnit0 = false, g_texUnit1 = false;
+function textureFinishedLoading(image, texture, texunit){
+	
+	
+	// !!! NEL DRAW C'E' IL  CONTROLLO SU g_texUnit0 E g_texUnit1
+	if(texunit == 0){
+		console.log("TEX 0");
+    	gl.activeTexture(gl.TEXTURE0);
+    }else{
+    	console.log("TEX 1");
+    	gl.activeTexture(gl.TEXTURE1);
+    }
 	gl.bindTexture(gl.TEXTURE_2D, texture);
 	gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, true);
-	
 	gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, image);
-	
 	if (fov>=50){
 		// it's not a power of 2. Turn of mips and set wrapping to clamp to edge
 	    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
 	    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
-	    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);	
+	    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+	    
 	}else{
 		gl.generateMipmap(gl.TEXTURE_2D);
 		gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
 		gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
 	}
+	
+	if(texunit == 0){
+		gl.uniform1i(pwgl.uniformSampler0Loc, 0);
+    	g_texUnit0 = true;
+    }else{
+    	gl.uniform1i(pwgl.uniformSampler1Loc, 1);
+    	g_texUnit1 = true;
+    }
+	if (!gl.isTexture(texture)){
+    	console.log("error in texture");
+    }
 	gl.bindTexture(gl.TEXTURE_2D, null);
 }
 
@@ -475,8 +572,10 @@ function setupShaders() {
 	  pwgl.vertexTextureAttributeLoc = gl.getAttribLocation(shaderProgram, "aTextureCoordinates");
 	  pwgl.uniformMVMatrixLoc = gl.getUniformLocation(shaderProgram, "uMVMatrix");
 	  pwgl.uniformProjMatrixLoc = gl.getUniformLocation(shaderProgram, "uPMatrix");
-	  pwgl.uniformSamplerLoc = gl.getUniformLocation(shaderProgram, "uPMatrix");
-	  pwgl.uniformFragColorLoc = gl.getUniformLocation(shaderProgram, "u_FragColor");
+	  pwgl.uniformSampler0Loc = gl.getUniformLocation(shaderProgram, "uSampler0");
+	  pwgl.uniformSampler1Loc = gl.getUniformLocation(shaderProgram, "uSampler1");
+//	  pwgl.uniformSamplerLoc = gl.getUniformLocation(shaderProgram, "uPMatrix");
+//	  pwgl.uniformFragColorLoc = gl.getUniformLocation(shaderProgram, "u_FragColor");
 	  
 	  
 	  gl.enableVertexAttribArray(pwgl.vertexPositionAttributeLoc);
@@ -495,10 +594,15 @@ function handleContextLost(event){
 	
 	// Ignore all ongoing image load by removing
 	// their onload handler
-	for (var i=0; i < pwgl.ongoingImageLoads.length; i++){
-		pwgl.ongoingImageLoads[i] = undefined;
+	for (var i=0; i < pwgl.ongoingImageLoads0.length; i++){
+		pwgl.ongoingImageLoads0[i] = undefined;
 	}
-	pwgl.ongoingImageLoads = [];
+	for (var i=0; i < pwgl.ongoingImageLoads1.length; i++){
+		pwgl.ongoingImageLoads1[i] = undefined;
+	}
+	
+	pwgl.ongoingImageLoads0 = [];
+	pwgl.ongoingImageLoads1 = [];
 }
 
 function handleContextRestored(event){
@@ -620,7 +724,7 @@ function startup() {
 	gl.enable(gl.DEPTH_TEST);
 	
 	
-    mat4.identity(skyRotationMatrix);
+    mat4.identity(pwgl.skyRotationMatrix);
 
 	
     var coordsDiv = document.getElementById('coords');
@@ -663,9 +767,9 @@ function convertXY2World(x,y){
     
     var xyz = worldToModel(xy);
     var rxyz = [];
-    rxyz[0] = skyRotationMatrix[0] * xyz[0] + skyRotationMatrix[1] * xyz[1] + skyRotationMatrix[2] * xyz[2];
-    rxyz[1] = skyRotationMatrix[4] * xyz[0] + skyRotationMatrix[5] * xyz[1] + skyRotationMatrix[6] * xyz[2];
-    rxyz[2] = skyRotationMatrix[8] * xyz[0] + skyRotationMatrix[9] * xyz[1] + skyRotationMatrix[10] * xyz[2];
+    rxyz[0] = pwgl.skyRotationMatrix[0] * xyz[0] + pwgl.skyRotationMatrix[1] * xyz[1] + pwgl.skyRotationMatrix[2] * xyz[2];
+    rxyz[1] = pwgl.skyRotationMatrix[4] * xyz[0] + pwgl.skyRotationMatrix[5] * xyz[1] + pwgl.skyRotationMatrix[6] * xyz[2];
+    rxyz[2] = pwgl.skyRotationMatrix[8] * xyz[0] + pwgl.skyRotationMatrix[9] * xyz[1] + pwgl.skyRotationMatrix[10] * xyz[2];
     return rxyz;
 }
 
@@ -688,15 +792,15 @@ function rotateViewXY(x,y){
 	    var deltaY = vy - lastMouseY;
 	    mat4.rotate(newRotationMatrix, degToRad(deltaY / 3), [1, 0, 0]);
 
-	    mat4.multiply(newRotationMatrix, skyRotationMatrix, skyRotationMatrix);
+	    mat4.multiply(newRotationMatrix, pwgl.skyRotationMatrix, pwgl.skyRotationMatrix);
 
 	    lastMouseX = vx;
 	    lastMouseY = vy;
     }
     var rxyz = [];
-    rxyz[0] = skyRotationMatrix[0] * xyz[0] + skyRotationMatrix[1] * xyz[1] + skyRotationMatrix[2] * xyz[2];
-    rxyz[1] = skyRotationMatrix[4] * xyz[0] + skyRotationMatrix[5] * xyz[1] + skyRotationMatrix[6] * xyz[2];
-    rxyz[2] = skyRotationMatrix[8] * xyz[0] + skyRotationMatrix[9] * xyz[1] + skyRotationMatrix[10] * xyz[2];
+    rxyz[0] = pwgl.skyRotationMatrix[0] * xyz[0] + pwgl.skyRotationMatrix[1] * xyz[1] + pwgl.skyRotationMatrix[2] * xyz[2];
+    rxyz[1] = pwgl.skyRotationMatrix[4] * xyz[0] + pwgl.skyRotationMatrix[5] * xyz[1] + pwgl.skyRotationMatrix[6] * xyz[2];
+    rxyz[2] = pwgl.skyRotationMatrix[8] * xyz[0] + pwgl.skyRotationMatrix[9] * xyz[1] + pwgl.skyRotationMatrix[10] * xyz[2];
     return rxyz;
 }
 
