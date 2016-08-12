@@ -24,25 +24,20 @@ console.log("maxNPix: "+maxNPix);
 var gl;
 var canvas;
 
-//var pwgl = {};
-//pwgl.ongoingImageLoads = [];
-//pwgl.loadedTextures = [];
-//pwgl.skyRotationMatrix = mat4.create();
-
 var pwgl = {
+		"defaultMapId": 0,
 		"ongoingImageLoads0" : [],
 		"ongoingImageLoads1" : [],
 		"loadedTextures" : [],
 		"texturesArray0" : [],
 		"texturesArray1" : [],
+		"texturesArray" : [[]],
+		"loadedSkiesIds": [],
 		"requestId" : "",
 		"projectionMatrix" : mat4.create(),
 		"modelViewMatrix" : mat4.create(),
 		"skyRotationMatrix": mat4.create(),
 		"modelViewMatrixStack" : [],
-//		"vertexPositionBuffer" : gl.createBuffer(),
-//		"vertexTextureCoordinateBuffer" : gl.createBuffer(),
-//		"vertexIndexBuffer" : gl.createBuffer(),
 		"vertexPositionBuffer" : "",
 		"vertexTextureCoordinateBuffer" : "",
 		"vertexIndexBuffer" : "",
@@ -57,13 +52,11 @@ var pwgl = {
 		"uniformMVMatrixLoc": "",
 		"uniformProjMatrixLoc": "",
 		"uniformSampler0Loc": "",
-		"uniformSampler1Loc": ""
-//		"vertexTextureAttributeLoc" : gl.getAttribLocation(shaderProgram, 'aTextureCoordinates'),
-//		"vertexPositionAttributeLoc" : gl.getAttribLocation(shaderProgram, 'aVertexPosition'),
-//		"uniformMVMatrixLoc": gl.getUniformLocation(shaderProgram, 'uMVMatrix'),
-//		"uniformProjMatrixLoc": gl.getUniformLocation(shaderProgram, 'uPMatrix'),
-//		"uniformSampler0Loc": gl.getUniformLocation(shaderProgram, 'uSampler0'),
-//		"uniformSampler1Loc": gl.getUniformLocation(shaderProgram, 'uSampler1')
+		"uniformSampler1Loc": "",
+		"uniformSampler2Loc": "",
+		"uniformVertexTextureFactor0Loc" : "",
+		"uniformVertexTextureFactor1Loc" : "",
+		"uniformVertexTextureFactor2Loc" : ""
 }
 
 function initWebGL(canvas) {
@@ -189,18 +182,22 @@ function draw(){
     
     
     if (fov>=50){
-		if (g_texUnit0 && g_texUnit1) {
-			gl.activeTexture(gl.TEXTURE0);
-			gl.bindTexture(gl.TEXTURE_2D, pwgl.texturesArray0[0]);
-			gl.activeTexture(gl.TEXTURE1);
-			gl.bindTexture(gl.TEXTURE_2D, pwgl.texturesArray1[0]);
+//    	if (g_texUnit0 && g_texUnit1) {
+			for(var j=0; j<pwgl.texturesArray.length;j++){
+				gl.activeTexture(gl.TEXTURE0+j);
+				gl.bindTexture(gl.TEXTURE_2D, pwgl.texturesArray[j][0]);
+			}
+//			gl.activeTexture(gl.TEXTURE0);
+//			gl.bindTexture(gl.TEXTURE_2D, pwgl.texturesArray0[0]);
+//			gl.activeTexture(gl.TEXTURE1);
+//			gl.bindTexture(gl.TEXTURE_2D, pwgl.texturesArray1[0]);
         	for (var i=0;i<maxNPix;i++){
             	gl.drawElements(gl.TRIANGLES, 6, 
                         gl.UNSIGNED_SHORT, 12*i);
 //             	gl.drawElements(gl.TRIANGLES, 12, 
 //                         gl.UNSIGNED_SHORT, 24*i);
             }	
-    	}
+//    	}
     	
     		
     }else {
@@ -380,15 +377,59 @@ function setupBuffers(){
 	
 }
 
-function changeSkyURL(skyURL){
-	currMapURL = skyURL;
-	console.log("changeSkyURL "+pwgl.loadedTextures );
+
+function changeSkyTransparency(skyidx, transpValue){
+	console.log(pwgl.loadedSkiesIds);
+	console.log("skyidx "+skyidx);
+	var shaderIndex = pwgl.loadedSkiesIds.indexOf(parseInt(skyidx));
+	
+	if (shaderIndex == -1){
+		console.log("not found "+shaderIndex);
+		return;
+	}
+	
+	
+	console.log("indexOf "+shaderIndex);
+	if (shaderIndex == 0){
+		console.log("Factor Shader 0: "+transpValue/100);
+		gl.uniform1f(pwgl.uniformVertexTextureFactor0Loc, transpValue/100);	
+	}else if (shaderIndex == 1){
+		console.log("Factor Shader 1: "+transpValue/100);
+		gl.uniform1f(pwgl.uniformVertexTextureFactor1Loc, transpValue/100);
+	}else if (shaderIndex == 2){
+		console.log("Factor Shader 2: "+transpValue/100);
+		gl.uniform1f(pwgl.uniformVertexTextureFactor2Loc, transpValue/100);
+	}
+	var currMap = getSkyDyIdx(skyidx);
+	
+}
+
+function addSky(skyidx){
+	var shaderIndex = pwgl.loadedSkiesIds.indexOf(parseInt(skyidx));
+	if (shaderIndex !== -1){
+		return;
+	}
+	if (shaderIndex == 0){
+		console.log("Factor Shader 0: "+1.0);
+		gl.uniform1f(pwgl.uniformVertexTextureFactor0Loc, 1.0);	
+	}else if (shaderIndex == 1){
+		console.log("Factor Shader 1: "+1.0);
+		gl.uniform1f(pwgl.uniformVertexTextureFactor1Loc, 1.0);
+	}else if (shaderIndex == 2){
+		console.log("Factor Shader 2: "+1.0);
+		gl.uniform1f(pwgl.uniformVertexTextureFactor2Loc, 1.0);
+	}
+	var currMap = getSkyDyIdx(parseInt(skyidx));
+	currMapURL = currMap.URL;
+	pwgl.loadedSkiesIds[pwgl.loadedSkiesIds.length++] = currMap.index;
+	console.log("addSky "+pwgl.loadedTextures );
 	setupTextures(true);
 }
 
 function setupTextures(forceReload){
 	pwgl.texturesArray0 = [];
 	pwgl.texturesArray1 = [];
+	pwgl.texturesArray2 = [];
 	pwgl.loadedTextures.splice(0, pwgl.loadedTextures.length);
 //	pwgl.loadedTextures = [];
 	console.log("setupTexture "+pwgl.loadedTextures );
@@ -416,21 +457,21 @@ function addTextures(forceReload){
 			return;
 		}
 		console.log("loading texture AllSky");
-		pwgl.texturesArray0[0] = gl.createTexture();
-		loadImageForTexture("http://skies.esac.esa.int/AllWISEColor/Norder3/Allsky.jpg", pwgl.texturesArray0[0], 0);
 		
-		pwgl.texturesArray1[0] = gl.createTexture();
-		loadImageForTexture(currMap+"/Norder3/Allsky.jpg", pwgl.texturesArray1[0], 1);
-		
-		
-		
-//		pwgl.texturesArray[0] = gl.createTexture();
-//		loadImageForTexture("http://alasky.u-strasbg.fr/MellingerRGB/Norder3/Allsky.jpg", pwgl.texturesArray[0],1);
-//		loadImageForTexture("http://skies.esac.esa.int/DSSColor/Norder3/Allsky.jpg", pwgl.texturesArray1[0],0);
+		for (var j=0; j<pwgl.loadedSkiesIds.length && j<8;j++){
+			pwgl.texturesArray[j] = [];
+			pwgl.texturesArray[j][0] = gl.createTexture();
+			currMap = getSkyDyIdx(pwgl.loadedSkiesIds[j]);
+			console.log(currMap);
+			loadImageForTexture(currMap.URL+"/Norder3/Allsky.jpg", pwgl.texturesArray[j][0], j);
+		}
+		console.log(pwgl.texturesArray);
+//		pwgl.texturesArray0[0] = gl.createTexture();
+//		loadImageForTexture("http://skies.esac.esa.int/AllWISEColor/Norder3/Allsky.jpg", pwgl.texturesArray0[0], 0);
+//		
 //		pwgl.texturesArray1[0] = gl.createTexture();
-//		loadImageForTexture("http://skies.esac.esa.int/DSSColor/Norder3/Allsky.jpg", pwgl.texturesArray1[0],0);
-//		loadImageForTexture("http://skies.esac.esa.int/IRISColor/Norder3/Allsky.jpg", pwgl.texturesArray1[0],1);
-		
+//		loadImageForTexture(currMap+"/Norder3/Allsky.jpg", pwgl.texturesArray1[0], 1);
+			
 		pwgl.loadedTextures = [];
 	}else if (mouseDown || !fovInRange() || forceReload){
 		if (forceReload){
@@ -513,18 +554,21 @@ function loadImageForTexture(url, texture, texunit){
 //		image.style.KhtmlOpacity = "0.15";
 //	}
 }
-var g_texUnit0 = false, g_texUnit1 = false;
-function textureFinishedLoading(image, texture, texunit){
-	
-	
+//var g_texUnit0 = false, g_texUnit1 = false;
+function textureFinishedLoading(image, texture, texunit){	
 	// !!! NEL DRAW C'E' IL  CONTROLLO SU g_texUnit0 E g_texUnit1
-	if(texunit == 0){
-		console.log("TEX 0");
-    	gl.activeTexture(gl.TEXTURE0);
-    }else{
-    	console.log("TEX 1");
-    	gl.activeTexture(gl.TEXTURE1);
-    }
+	console.log("activating TEX "+texunit);
+	gl.activeTexture(gl.TEXTURE0+texunit);
+//	if(texunit == 0){
+//		console.log("activating TEX 0");
+//    	gl.activeTexture(gl.TEXTURE0);
+//    }else if (texunit == 1){
+//    	console.log("activating TEX 1");
+//    	gl.activeTexture(gl.TEXTURE1);
+//    }else if (texunit == 1){
+//    	console.log("activating TEX 2");
+//    	gl.activeTexture(gl.TEXTURE2);
+//    }
 	gl.bindTexture(gl.TEXTURE_2D, texture);
 	gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, true);
 	gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, image);
@@ -542,10 +586,13 @@ function textureFinishedLoading(image, texture, texunit){
 	
 	if(texunit == 0){
 		gl.uniform1i(pwgl.uniformSampler0Loc, 0);
-    	g_texUnit0 = true;
-    }else{
+//    	g_texUnit0 = true;
+    }else if(texunit == 1){
     	gl.uniform1i(pwgl.uniformSampler1Loc, 1);
-    	g_texUnit1 = true;
+//    	g_texUnit1 = true;
+    }else if(texunit == 2){
+    	gl.uniform1i(pwgl.uniformSampler2Loc, 2);
+//    	g_texUnit1 = true;
     }
 	if (!gl.isTexture(texture)){
     	console.log("error in texture");
@@ -565,15 +612,28 @@ function setupShaders() {
 	  if (!gl.getProgramParameter(shaderProgram, gl.LINK_STATUS) && !gl.isContextLost()) {
 	    alert("Failed to setup shaders");
 	  }
-
 	  gl.useProgram(shaderProgram);
-	  
 	  pwgl.vertexPositionAttributeLoc = gl.getAttribLocation(shaderProgram, "aVertexPosition"); 
 	  pwgl.vertexTextureAttributeLoc = gl.getAttribLocation(shaderProgram, "aTextureCoordinates");
 	  pwgl.uniformMVMatrixLoc = gl.getUniformLocation(shaderProgram, "uMVMatrix");
 	  pwgl.uniformProjMatrixLoc = gl.getUniformLocation(shaderProgram, "uPMatrix");
 	  pwgl.uniformSampler0Loc = gl.getUniformLocation(shaderProgram, "uSampler0");
 	  pwgl.uniformSampler1Loc = gl.getUniformLocation(shaderProgram, "uSampler1");
+	  pwgl.uniformSampler2Loc = gl.getUniformLocation(shaderProgram, "uSampler2");
+	  
+	  pwgl.uniformVertexTextureFactor0Loc = gl.getUniformLocation(shaderProgram, "uFactor0");
+	  pwgl.uniformVertexTextureFactor1Loc = gl.getUniformLocation(shaderProgram, "uFactor1");
+	  pwgl.uniformVertexTextureFactor2Loc = gl.getUniformLocation(shaderProgram, "uFactor2");
+	  
+	  gl.uniform1f(pwgl.uniformVertexTextureFactor0Loc, 1.0);
+	  gl.uniform1f(pwgl.uniformVertexTextureFactor1Loc, -99.0);
+	  gl.uniform1f(pwgl.uniformVertexTextureFactor2Loc, -99.0);
+	  
+	  
+	  
+	  
+	  
+	  
 //	  pwgl.uniformSamplerLoc = gl.getUniformLocation(shaderProgram, "uPMatrix");
 //	  pwgl.uniformFragColorLoc = gl.getUniformLocation(shaderProgram, "u_FragColor");
 	  
@@ -697,6 +757,7 @@ function modelToRaDec(xyz){
 	return [ra* 180 / Math.PI, 90 - dec* (180 / Math.PI)];
 }
 
+
 function startup() {
 	canvas = document.createElement('canvas');
 	div = document.getElementById("container");
@@ -707,8 +768,10 @@ function startup() {
     canvas.style.position = "absolute";
     canvas.style.border   = "1px solid";
     
-    currMapURL = defaultMapURL;
+//    currMapURL = defaultMapURL;
+    currMapURL = getSkyDyIdx(pwgl.defaultMapId).URL;
     
+    pwgl.loadedSkiesIds[pwgl.loadedSkiesIds.length++] = pwgl.defaultMapId;
     
     div.appendChild(canvas)
     offset = (document.getElementById("myGLCanvas")).getBoundingClientRect();
