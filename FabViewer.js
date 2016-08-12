@@ -405,23 +405,28 @@ function changeSkyTransparency(skyidx, transpValue){
 }
 
 function addSky(skyidx){
+	console.log("skyidx "+skyidx);
 	var shaderIndex = pwgl.loadedSkiesIds.indexOf(parseInt(skyidx));
+	console.log("shaderIndex "+shaderIndex);
 	if (shaderIndex !== -1){
 		return;
 	}
-	if (shaderIndex == 0){
+	
+	var currMap = getSkyDyIdx(parseInt(skyidx));
+	currMap.selected = true;
+	pwgl.loadedSkiesIds[pwgl.loadedSkiesIds.length++] = currMap.index;
+	
+	if (pwgl.loadedSkiesIds.length == 1){
 		console.log("Factor Shader 0: "+1.0);
 		gl.uniform1f(pwgl.uniformVertexTextureFactor0Loc, 1.0);	
-	}else if (shaderIndex == 1){
+	}else if (pwgl.loadedSkiesIds.length == 2){
 		console.log("Factor Shader 1: "+1.0);
 		gl.uniform1f(pwgl.uniformVertexTextureFactor1Loc, 1.0);
-	}else if (shaderIndex == 2){
+	}else if (pwgl.loadedSkiesIds.length == 3){
 		console.log("Factor Shader 2: "+1.0);
 		gl.uniform1f(pwgl.uniformVertexTextureFactor2Loc, 1.0);
 	}
-	var currMap = getSkyDyIdx(parseInt(skyidx));
-	currMapURL = currMap.URL;
-	pwgl.loadedSkiesIds[pwgl.loadedSkiesIds.length++] = currMap.index;
+	
 	console.log("addSky "+pwgl.loadedTextures );
 	setupTextures(true);
 }
@@ -554,7 +559,7 @@ function loadImageForTexture(url, texture, texunit){
 //		image.style.KhtmlOpacity = "0.15";
 //	}
 }
-//var g_texUnit0 = false, g_texUnit1 = false;
+//var g_texUnit0 = false, g_texUnit1 = false, g_texUnit2 = false;
 function textureFinishedLoading(image, texture, texunit){	
 	// !!! NEL DRAW C'E' IL  CONTROLLO SU g_texUnit0 E g_texUnit1
 	console.log("activating TEX "+texunit);
@@ -769,7 +774,12 @@ function startup() {
     canvas.style.border   = "1px solid";
     
 //    currMapURL = defaultMapURL;
-    currMapURL = getSkyDyIdx(pwgl.defaultMapId).URL;
+//    currMapURL = getSkyDyIdx(pwgl.defaultMapId).URL;
+    var defaultMap = getSkyDyIdx(pwgl.defaultMapId); 
+    defaultMap.selected = true;
+    defaultMap.shaderIdx = 0;
+    
+    
     
     pwgl.loadedSkiesIds[pwgl.loadedSkiesIds.length++] = pwgl.defaultMapId;
     
