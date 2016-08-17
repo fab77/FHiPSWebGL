@@ -205,17 +205,22 @@ function draw(){
     		
     }else {
 //    	gl.activeTexture(gl.TEXTURE0);
-    	for(var j=0; j<pwgl.texturesArray.length;j++){
-			gl.activeTexture(gl.TEXTURE0+j);
+    	
+			
 //			gl.bindTexture(gl.TEXTURE_2D, pwgl.texturesArray[j][0]);
-			for (var i=0;i<maxNPix;i++){
+		for (var i=0;i<maxNPix;i++){
+			for(var j=0; j<pwgl.texturesArray.length;j++){
+//	    		console.log("Drawing texture "+j);
+				gl.activeTexture(gl.TEXTURE0+j);
 	    		gl.bindTexture(gl.TEXTURE_2D, pwgl.texturesArray[j][i]);
-	        	gl.drawElements(gl.TRIANGLES, 6, 
-	                    gl.UNSIGNED_SHORT, 12*i);
-//	         	gl.drawElements(gl.TRIANGLES, 12, 
-//	                     gl.UNSIGNED_SHORT, 24*i);
-	        }	
+	        }
+			gl.drawElements(gl.TRIANGLES, 6, 
+                    gl.UNSIGNED_SHORT, 12*i);
+//         	gl.drawElements(gl.TRIANGLES, 12, 
+//            gl.UNSIGNED_SHORT, 24*i);
 		}
+			
+		
     	
     }
     
