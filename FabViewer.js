@@ -32,6 +32,7 @@ var pwgl = {
 		"texturesArray0" : [],
 		"texturesArray1" : [],
 		"texturesArray" : [[]],
+		"texturesTransparencyArray" : [],
 		"loadedSkiesIds": [],
 		"requestId" : "",
 		"projectionMatrix" : mat4.create(),
@@ -51,9 +52,11 @@ var pwgl = {
 		"vertexPositionAttributeLoc" : "",
 		"uniformMVMatrixLoc": "",
 		"uniformProjMatrixLoc": "",
+		"uniformSamplerLoc": [],
 		"uniformSampler0Loc": "",
 		"uniformSampler1Loc": "",
 		"uniformSampler2Loc": "",
+		"uniformVertexTextureFactorLoc" : [],
 		"uniformVertexTextureFactor0Loc" : "",
 		"uniformVertexTextureFactor1Loc" : "",
 		"uniformVertexTextureFactor2Loc" : ""
@@ -140,18 +143,9 @@ function loadShaderFromDOM(id) {
 function draw(){
 	var xyz = getCoordsCenter();
 	currentcc = modelToRaDec(xyz);
-//	if (!fovInRange()){
-//		console.log("redraw");
-//		setupBuffers();
-//		setupTextures();
-//		oldFov = fov;
-//	}else if (mouseDown){
-//		addTextures();
-//    }
 	if (mouseDown && fovInRange()){
 		addTextures();
     }
-
 	
 	pwgl.requestId = requestAnimationFrame(draw);
 	
@@ -167,7 +161,6 @@ function draw(){
 	
 	uploadModelViewMatrixToShader();
 	uploadProjectionMatrixToShader();
-//	gl.uniform1i(pwgl.uniformSamplerLoc, 0);
     
     gl.bindBuffer(gl.ARRAY_BUFFER, pwgl.vertexPositionBuffer);
     gl.vertexAttribPointer(pwgl.vertexPositionAttributeLoc,
@@ -185,53 +178,56 @@ function draw(){
     
     
     if (fov>=50){
-//    	if (g_texUnit0 && g_texUnit1) {
-			for(var j=0; j<pwgl.texturesArray.length;j++){
-				gl.activeTexture(gl.TEXTURE0+j);
-				gl.bindTexture(gl.TEXTURE_2D, pwgl.texturesArray[j][0]);
-			}
-//			gl.activeTexture(gl.TEXTURE0);
-//			gl.bindTexture(gl.TEXTURE_2D, pwgl.texturesArray0[0]);
-//			gl.activeTexture(gl.TEXTURE1);
-//			gl.bindTexture(gl.TEXTURE_2D, pwgl.texturesArray1[0]);
-        	for (var i=0;i<maxNPix;i++){
-            	gl.drawElements(gl.TRIANGLES, 6, 
-                        gl.UNSIGNED_SHORT, 12*i);
-//             	gl.drawElements(gl.TRIANGLES, 12, 
+    	
+    	for (var j=0; j<pwgl.loadedSkiesIds.length && j<8;j++){
+    		gl.activeTexture(gl.TEXTURE0+j);
+			gl.bindTexture(gl.TEXTURE_2D, pwgl.texturesArray[j][0]);
+			gl.uniform1f(pwgl.uniformVertexTextureFactorLoc[j], pwgl.texturesTransparencyArray[j]);
+    	}
+    	
+    	for (var k=pwgl.loadedSkiesIds.length;k<8;k++){
+			gl.uniform1f(pwgl.uniformVertexTextureFactorLoc[k], -99);
+    	}
+    	
+    	for (var i=0;i<maxNPix;i++){
+        	gl.drawElements(gl.TRIANGLES, 6, 
+                    gl.UNSIGNED_SHORT, 12*i);
+//       	gl.drawElements(gl.TRIANGLES, 12, 
 //                         gl.UNSIGNED_SHORT, 24*i);
-            }	
-//    	}
-    	
-    		
+        }
     }else {
-//    	gl.activeTexture(gl.TEXTURE0);
+
     	
-			
-//			gl.bindTexture(gl.TEXTURE_2D, pwgl.texturesArray[j][0]);
-		for (var i=0;i<maxNPix;i++){
-			for(var j=0; j<pwgl.texturesArray.length;j++){
+    	
+    	for (var i=0;i<maxNPix;i++){
+			for(var j=0; j<pwgl.loadedSkiesIds.length && j<8;j++){
 //	    		console.log("Drawing texture "+j);
 				gl.activeTexture(gl.TEXTURE0+j);
 	    		gl.bindTexture(gl.TEXTURE_2D, pwgl.texturesArray[j][i]);
+	    		gl.uniform1f(pwgl.uniformVertexTextureFactorLoc[j], pwgl.texturesTransparencyArray[j]);
 	        }
+			for (var k=pwgl.loadedSkiesIds.length;k<8;k++){
+				gl.uniform1f(pwgl.uniformVertexTextureFactorLoc[k], -99);
+	    	}
 			gl.drawElements(gl.TRIANGLES, 6, 
                     gl.UNSIGNED_SHORT, 12*i);
 //         	gl.drawElements(gl.TRIANGLES, 12, 
 //            gl.UNSIGNED_SHORT, 24*i);
 		}
-			
-		
     	
+    	
+//    	for (var i=0;i<maxNPix;i++){
+//			for(var j=0; j<pwgl.texturesArray.length;j++){
+////	    		console.log("Drawing texture "+j);
+//				gl.activeTexture(gl.TEXTURE0+j);
+//	    		gl.bindTexture(gl.TEXTURE_2D, pwgl.texturesArray[j][i]);
+//	        }
+//			gl.drawElements(gl.TRIANGLES, 6, 
+//                    gl.UNSIGNED_SHORT, 12*i);
+////         	gl.drawElements(gl.TRIANGLES, 12, 
+////            gl.UNSIGNED_SHORT, 24*i);
+//		}
     }
-    
-    
-//     gl.bindBuffer(gl.ARRAY_BUFFER, pwgl.vertexTextureCoordinateBuffer);
-//     for (var k=0;k<4;k++){
-//     	gl.uniform4f(pwgl.uniformFragColorLoc, 1.0, 0.0, 0.0, 1.0);
-//     	gl.vertexAttrib3f(pwgl.vertexPositionAttributeLoc, points[k][0], points[k][1], points[k][2]);
-//     	gl.drawArrays(gl.POINTS,0,4);
-//     }
-    
 }
 
 function uploadModelViewMatrixToShader() {
@@ -378,46 +374,76 @@ function setupBuffers(){
     pwgl.VERTEX_INDEX_BUF_NUM_ITEMS = vertexIndices.length;
 
 	
-    console.log(textureCoordinates);
-    console.log(vertexPosition);
-    console.log(vertexIndices);
+//    console.log(textureCoordinates);
+//    console.log(vertexPosition);
+//    console.log(vertexIndices);
     
 	
-    console.log(textureCoordinates.length);
-	console.log(vertexPosition.length);
-	console.log(vertexIndices.length);
+//    console.log(textureCoordinates.length);
+//	console.log(vertexPosition.length);
+//	console.log(vertexIndices.length);
 	
 }
 
 
 function changeSkyTransparency(skyidx, transpValue){
-	console.log(pwgl.loadedSkiesIds);
-	console.log("skyidx "+skyidx);
+//	console.log(pwgl.loadedSkiesIds);
+//	console.log("skyidx "+skyidx);
+	console.log("Remove  ChangeSkyTransparency");
 	var shaderIndex = pwgl.loadedSkiesIds.indexOf(parseInt(skyidx));
 	
 	if (shaderIndex == -1){
 		console.log("not found "+shaderIndex);
 		return;
 	}
+	console.log("skyidx: "+skyidx);
+	console.log("shaderIndex: "+shaderIndex);
+	console.log("loadedSkiesIds: "+pwgl.loadedSkiesIds);
+//	console.log("indexOf "+shaderIndex);
+	pwgl.texturesTransparencyArray[shaderIndex] = transpValue/100;
+//	gl.uniform1f(pwgl.uniformVertexTextureFactorLoc[shaderIndex], transpValue/100);
 	
-	
-	console.log("indexOf "+shaderIndex);
-	if (shaderIndex == 0){
-		console.log("Factor Shader 0: "+transpValue/100);
-		gl.uniform1f(pwgl.uniformVertexTextureFactor0Loc, transpValue/100);	
-	}else if (shaderIndex == 1){
-		console.log("Factor Shader 1: "+transpValue/100);
-		gl.uniform1f(pwgl.uniformVertexTextureFactor1Loc, transpValue/100);
-	}else if (shaderIndex == 2){
-		console.log("Factor Shader 2: "+transpValue/100);
-		gl.uniform1f(pwgl.uniformVertexTextureFactor2Loc, transpValue/100);
-	}
+//	if (shaderIndex == 0){
+////		console.log("Factor Shader 0: "+transpValue/100);
+//		gl.uniform1f(pwgl.uniformVertexTextureFactor0Loc, transpValue/100);	
+//	}else if (shaderIndex == 1){
+////		console.log("Factor Shader 1: "+transpValue/100);
+//		gl.uniform1f(pwgl.uniformVertexTextureFactor1Loc, transpValue/100);
+//	}else if (shaderIndex == 2){
+////		console.log("Factor Shader 2: "+transpValue/100);
+//		gl.uniform1f(pwgl.uniformVertexTextureFactor2Loc, transpValue/100);
+//	}
 	var currMap = getSkyDyIdx(skyidx);
+	console.log("------------------------");
 	
 }
 
+function removeSky(skyidx){
+	console.log("Inside RemoveSky");
+	var shaderIndex = pwgl.loadedSkiesIds.indexOf(parseInt(skyidx));
+	if (shaderIndex == -1){
+		console.log("sky not found");
+		return;
+	}
+	var currMap = getSkyDyIdx(parseInt(skyidx));
+	currMap.selected = false;
+//	pwgl.loadedSkiesIds[shaderIndex] = -99;
+	pwgl.loadedSkiesIds.splice(shaderIndex, 1);
+	pwgl.texturesArray.splice(shaderIndex, 1);
+	pwgl.texturesTransparencyArray.splice(shaderIndex, 1);
+	console.log("skyidx: "+skyidx);
+	console.log("shaderIndex: "+shaderIndex);
+	console.log("loadedSkiesIds: "+pwgl.loadedSkiesIds);
+	console.log("texturesArray: "+pwgl.texturesArray);
+	console.log("texturesTransparencyArray: "+pwgl.texturesTransparencyArray);
+
+	addTextures(true);
+	console.log("------------------------");
+}
+
 function addSky(skyidx){
-	console.log("skyidx "+skyidx);
+//	console.log("skyidx "+skyidx);
+	console.log("Inside AddSky");
 	var shaderIndex = pwgl.loadedSkiesIds.indexOf(parseInt(skyidx));
 	if (shaderIndex !== -1){
 		return;
@@ -425,23 +451,37 @@ function addSky(skyidx){
 	
 	var currMap = getSkyDyIdx(parseInt(skyidx));
 	currMap.selected = true;
-	pwgl.loadedSkiesIds[pwgl.loadedSkiesIds.length++] = currMap.index;
+	var newIdx = pwgl.loadedSkiesIds.length++;
+	pwgl.loadedSkiesIds[newIdx] = currMap.index;
+	
+	pwgl.texturesTransparencyArray[newIdx] = 1.0;
+	pwgl.texturesArray[newIdx] = [];
 	shaderIndex = pwgl.loadedSkiesIds.indexOf(parseInt(currMap.index));
+	console.log("skyidx: "+skyidx);
+	console.log("shaderIndex: "+shaderIndex);
+	console.log("loadedSkiesIds: "+pwgl.loadedSkiesIds);
+	console.log("texturesArray: "+pwgl.texturesArray);
+	console.log("texturesTransparencyArray: "+pwgl.texturesTransparencyArray);
+//	gl.uniform1f(pwgl.uniformVertexTextureFactorLoc[shaderIndex], 1.0);
+	
+//	if (shaderIndex == 0){
+////		console.log("Factor Shader 0: "+1.0);
+//		gl.uniform1f(pwgl.uniformVertexTextureFactor0Loc, 1.0);	
+//	}else if (shaderIndex == 1){
+////		console.log("Factor Shader 1: "+1.0);
+//		gl.uniform1f(pwgl.uniformVertexTextureFactor1Loc, 1.0);
+//	}else if (shaderIndex == 2){
+////		console.log("Factor Shader 2: "+1.0);
+//		gl.uniform1f(pwgl.uniformVertexTextureFactor2Loc, 1.0);
+//	}
+	
+//	console.log("addSky "+pwgl.loadedTextures );
 	
 	
-	if (shaderIndex == 0){
-		console.log("Factor Shader 0: "+1.0);
-		gl.uniform1f(pwgl.uniformVertexTextureFactor0Loc, 1.0);	
-	}else if (shaderIndex == 1){
-		console.log("Factor Shader 1: "+1.0);
-		gl.uniform1f(pwgl.uniformVertexTextureFactor1Loc, 1.0);
-	}else if (shaderIndex == 2){
-		console.log("Factor Shader 2: "+1.0);
-		gl.uniform1f(pwgl.uniformVertexTextureFactor2Loc, 1.0);
-	}
-	
-	console.log("addSky "+pwgl.loadedTextures );
-	setupTextures(true);
+	// !!
+//	setupTextures(true);
+	addTextures(true, shaderIndex);
+	console.log("------------------------");
 }
 
 function setupTextures(forceReload){
@@ -449,13 +489,14 @@ function setupTextures(forceReload){
 //	pwgl.texturesArray1 = [];
 //	pwgl.texturesArray2 = [];
 	
-	for(var i=0; i<pwgl.texturesArray; i++){
+	for(var i=0; i<pwgl.texturesArray.length; i++){
 		pwgl.texturesArray[i] = [];
+//		pwgl.texturesTransparencyArray[i] = [];
 	}
 	
 	pwgl.loadedTextures.splice(0, pwgl.loadedTextures.length);
 //	pwgl.loadedTextures = [];
-	console.log("setupTexture "+pwgl.loadedTextures );
+//	console.log("setupTexture "+pwgl.loadedTextures );
 	addTextures(forceReload);
 }
 
@@ -469,47 +510,54 @@ function fovInRange(){
 	return false;
 }
 
-function addTextures(forceReload){
+function addTextures(forceReload, loadedSkiesId){
 	var currMap = currMapURL;
 
 	
-	console.log("begin of addTextures "+pwgl.loadedTextures );
+//	console.log("begin of addTextures "+pwgl.loadedTextures );
 	// fullZoom
 	if (fov >=50){
 	 	if (fovInRange() && !forceReload){
 			return;
 		}
-		console.log("loading texture AllSky");
+//		console.log("loading texture AllSky");
 		
+//	 	var loadedSkiesIdsIndex = 0;
+	 	console.log("pwgl.loadedSkiesIds "+pwgl.loadedSkiesIds);
 		for (var j=0; j<pwgl.loadedSkiesIds.length && j<8;j++){
-			pwgl.texturesArray[j] = [];
-			pwgl.texturesArray[j][0] = gl.createTexture();
+			
 			currMap = getSkyDyIdx(pwgl.loadedSkiesIds[j]);
-			console.log(currMap);
-			loadImageForTexture(currMap.URL+"/Norder3/Allsky.jpg", pwgl.texturesArray[j][0], j);
+//			if (currMap.selected){
+//			pwgl.texturesArray[loadedSkiesIdsIndex] = [];
+//				pwgl.texturesArray[loadedSkiesIdsIndex].splice(0, pwgl.texturesArray[loadedSkiesIdsIndex].length);
+				pwgl.texturesArray[j] = [];
+				pwgl.texturesArray[j][0] = gl.createTexture();
+//				console.log(currMap);
+				loadImageForTexture(currMap.URL+"/Norder3/Allsky.jpg", pwgl.texturesArray[j][0], j);
+//				loadedSkiesIdsIndex++;
+//			}
+
 		}
 		console.log(pwgl.texturesArray);
-//		pwgl.texturesArray0[0] = gl.createTexture();
-//		loadImageForTexture("http://skies.esac.esa.int/AllWISEColor/Norder3/Allsky.jpg", pwgl.texturesArray0[0], 0);
-//		
-//		pwgl.texturesArray1[0] = gl.createTexture();
-//		loadImageForTexture(currMap+"/Norder3/Allsky.jpg", pwgl.texturesArray1[0], 1);
-			
 		pwgl.loadedTextures = [];
 	}else if (mouseDown || !fovInRange() || forceReload){
 		var toBeLoadedTextures = [];
+		console.log("toBeLoadedTextures: "+toBeLoadedTextures);
 		for (var k=0; k<pwgl.loadedSkiesIds.length && k<8;k++){
-			if (forceReload){
+			console.log("toBeLoadedTextures["+k+"]: "+toBeLoadedTextures);
+			if (forceReload && loadedSkiesId == k){
 				pwgl.texturesArray[k].splice(0, pwgl.texturesArray[k].length);
+//				pwgl.texturesArray[k] = [];
 			}
-			console.log("loading single textures");
+//			console.log("loading single textures");
 			if (toBeLoadedTextures.length <= 0){
 				var cc = getCoordsCenter();
-				console.log("center coords in texture: "+cc);
+//				console.log("center coords in texture: "+cc);
 				var ccPixNo = getPixNo(cc);;
 				var index = 0;
-				
-				if (pwgl.loadedTextures.indexOf(ccPixNo) == -1){
+				console.log("ccPixNo: "+ccPixNo);
+				console.log("pwgl.loadedTextures: "+pwgl.loadedTextures);
+				if (pwgl.loadedTextures.indexOf(ccPixNo) == -1 || loadedSkiesId == k){
 					console.log("Adding ccpix: "+ccPixNo);
 					toBeLoadedTextures[index] = ccPixNo;
 					index++;
@@ -527,7 +575,7 @@ function addTextures(forceReload){
 						
 						var currPix = getPixNo(rxyz);
 						
-						if (pwgl.loadedTextures.indexOf(currPix) == -1){
+						if (pwgl.loadedTextures.indexOf(currPix) == -1  || loadedSkiesId == k){
 							pwgl.loadedTextures[pwgl.loadedTextures.length] = currPix;
 							toBeLoadedTextures[index] = currPix;
 							index++;
@@ -535,57 +583,17 @@ function addTextures(forceReload){
 					}
 				}
 			}
-			console.log("toBeLoadedTextures");
-			console.log(toBeLoadedTextures);
+//			console.log("toBeLoadedTextures");
+//			console.log(toBeLoadedTextures);
 			currMap = getSkyDyIdx(pwgl.loadedSkiesIds[k]);
-			console.log(currMap );
+//			console.log(currMap );
 			for (var i=0; i<toBeLoadedTextures.length;i++){
 				pwgl.texturesArray[k][toBeLoadedTextures[i]] = gl.createTexture();
 				loadImageForTexture(currMap.URL+"/Norder3/Dir0/Npix"+toBeLoadedTextures[i]+".jpg", pwgl.texturesArray[k][toBeLoadedTextures[i]], k);
 			}
 		}
-//		if (forceReload){
-//			pwgl.texturesArray0.splice(0, pwgl.texturesArray0.length);
-//		}
-//			
-//	
-//		console.log("loading single textures");
-//		var toBeLoadedTextures = [];
-//		var cc = getCoordsCenter();
-//		console.log("center coords in texture: "+cc);
-//		var ccPixNo = getPixNo(cc);;
-//		var index = 0;
-//		
-//		if (pwgl.loadedTextures.indexOf(ccPixNo) == -1){
-//			console.log("Adding ccpix: "+ccPixNo);
-//			toBeLoadedTextures[index] = ccPixNo;
-//			index++;
-//		}
-//		for (var i=-1; i<=1.1;i=i+0.25){
-//			for (var j=-1; j<=1;j=j+0.25){
-//				var xy = [i * 1/zoom,j * 1/zoom];
-//				var xyz = worldToModel(xy);
-//			    var rxyz = [];
-//			    rxyz[0] = pwgl.skyRotationMatrix[0] * xyz[0] + pwgl.skyRotationMatrix[1] * xyz[1] + pwgl.skyRotationMatrix[2] * xyz[2];
-//			    rxyz[1] = pwgl.skyRotationMatrix[4] * xyz[0] + pwgl.skyRotationMatrix[5] * xyz[1] + pwgl.skyRotationMatrix[6] * xyz[2];
-//			    rxyz[2] = pwgl.skyRotationMatrix[8] * xyz[0] + pwgl.skyRotationMatrix[9] * xyz[1] + pwgl.skyRotationMatrix[10] * xyz[2];
-//				
-//				
-//				var currPix = getPixNo(rxyz);
-//				if (pwgl.loadedTextures.indexOf(currPix) == -1){
-//					pwgl.loadedTextures[pwgl.loadedTextures.length] = currPix;
-//					toBeLoadedTextures[index] = currPix;
-//					index++;
-//				}
-//			}
-//		}
-//		for (var i=0; i<toBeLoadedTextures.length;i++){
-//			pwgl.texturesArray0[toBeLoadedTextures[i]] = gl.createTexture();
-//			loadImageForTexture(currMap+"/Norder3/Dir0/Npix"+toBeLoadedTextures[i]+".jpg", pwgl.texturesArray0[toBeLoadedTextures[i]]);
-//			
-//		}
 	}
-	console.log("end of addTextures: "+pwgl.loadedTextures);
+//	console.log("end of addTextures: "+pwgl.loadedTextures);
 	
 }
 
@@ -613,32 +621,13 @@ function loadImageForTexture(url, texture, texunit){
 		pwgl.ongoingImageLoads1.push(image);
 	}
 		
-	
 	image.crossOrigin = "anonymous";
 	image.src=url;
-	
-//	if (texunit == 0){
-//		image.style.filter       = "alpha(opacity=15)";
-//		image.style.MozOpacity   = "0.15";
-//		image.style.opacity      = "0.15";
-//		image.style.KhtmlOpacity = "0.15";
-//	}
 }
-//var g_texUnit0 = false, g_texUnit1 = false, g_texUnit2 = false;
+
 function textureFinishedLoading(image, texture, texunit){	
-	// !!! NEL DRAW C'E' IL  CONTROLLO SU g_texUnit0 E g_texUnit1
-	console.log("activating TEX "+texunit);
+//	console.log("activating TEX "+texunit);
 	gl.activeTexture(gl.TEXTURE0+texunit);
-//	if(texunit == 0){
-//		console.log("activating TEX 0");
-//    	gl.activeTexture(gl.TEXTURE0);
-//    }else if (texunit == 1){
-//    	console.log("activating TEX 1");
-//    	gl.activeTexture(gl.TEXTURE1);
-//    }else if (texunit == 1){
-//    	console.log("activating TEX 2");
-//    	gl.activeTexture(gl.TEXTURE2);
-//    }
 	gl.bindTexture(gl.TEXTURE_2D, texture);
 	gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, true);
 	gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, image);
@@ -656,13 +645,10 @@ function textureFinishedLoading(image, texture, texunit){
 	
 	if(texunit == 0){
 		gl.uniform1i(pwgl.uniformSampler0Loc, 0);
-//    	g_texUnit0 = true;
     }else if(texunit == 1){
     	gl.uniform1i(pwgl.uniformSampler1Loc, 1);
-//    	g_texUnit1 = true;
     }else if(texunit == 2){
     	gl.uniform1i(pwgl.uniformSampler2Loc, 2);
-//    	g_texUnit1 = true;
     }
 	if (!gl.isTexture(texture)){
     	console.log("error in texture");
@@ -691,22 +677,22 @@ function setupShaders() {
 	  pwgl.uniformSampler1Loc = gl.getUniformLocation(shaderProgram, "uSampler1");
 	  pwgl.uniformSampler2Loc = gl.getUniformLocation(shaderProgram, "uSampler2");
 	  
-	  pwgl.uniformVertexTextureFactor0Loc = gl.getUniformLocation(shaderProgram, "uFactor0");
-	  pwgl.uniformVertexTextureFactor1Loc = gl.getUniformLocation(shaderProgram, "uFactor1");
-	  pwgl.uniformVertexTextureFactor2Loc = gl.getUniformLocation(shaderProgram, "uFactor2");
-	  
-	  gl.uniform1f(pwgl.uniformVertexTextureFactor0Loc, 1.0);
-	  gl.uniform1f(pwgl.uniformVertexTextureFactor1Loc, -99.0);
-	  gl.uniform1f(pwgl.uniformVertexTextureFactor2Loc, -99.0);
-	  
-	  
-	  
-	  
-	  
-	  
-//	  pwgl.uniformSamplerLoc = gl.getUniformLocation(shaderProgram, "uPMatrix");
-//	  pwgl.uniformFragColorLoc = gl.getUniformLocation(shaderProgram, "u_FragColor");
-	  
+	  for (var i=0; i<4; i++){
+		  pwgl.uniformVertexTextureFactorLoc[i] = gl.getUniformLocation(shaderProgram, "uFactor"+i);
+		  if (i == 0){
+			  gl.uniform1f(pwgl.uniformVertexTextureFactorLoc[0], 1.0);
+		  }else{
+			  gl.uniform1f(pwgl.uniformVertexTextureFactorLoc[i], -99.0);
+		  }
+	  }
+
+//	  pwgl.uniformVertexTextureFactor0Loc = gl.getUniformLocation(shaderProgram, "uFactor0");
+//	  pwgl.uniformVertexTextureFactor1Loc = gl.getUniformLocation(shaderProgram, "uFactor1");
+//	  pwgl.uniformVertexTextureFactor2Loc = gl.getUniformLocation(shaderProgram, "uFactor2");
+//	  
+//	  gl.uniform1f(pwgl.uniformVertexTextureFactor0Loc, 1.0);
+//	  gl.uniform1f(pwgl.uniformVertexTextureFactor1Loc, -99.0);
+//	  gl.uniform1f(pwgl.uniformVertexTextureFactor2Loc, -99.0);
 	  
 	  gl.enableVertexAttribArray(pwgl.vertexPositionAttributeLoc);
 	  gl.enableVertexAttribArray(pwgl.vertexTextureAttributeLoc);
@@ -740,7 +726,6 @@ function handleContextRestored(event){
 	setupBuffers();
 	setupTextures();
 	gl.clearColor(0.5, 0.5, 0.5, 1);
-// 	gl.clearColor(1.0, 1.0, 1.0, 1.0);
 	gl.enable(gl.DEPTH_TEST);
 	pwgl.requestId = requestAnimationFrame(draw, canvas);
 }
@@ -788,21 +773,17 @@ function onMouseWheel(ev){
 }
 
 function handleMouseDown(event) {
-	console.log("center coords:"+getCoordsCenter());
+//	console.log("center coords:"+getCoordsCenter());
 	
-// 	console.log(getCoordsCenter());
     mouseDown = true;
     lastMouseX = event.clientX;
     lastMouseY = event.clientY;
     var rxyz = convertXY2World(event.clientX, event.clientY);
     
-    console.log("clicked coords:");
-    console.log(rxyz);
+//    console.log("clicked coords:");
+//    console.log(rxyz);
     
 //     console.log("HTML coords: "+event.clientX+" "+event.clientY);
-//     var xy = viewToWorld(event.clientX, event.clientY);
-//     console.log("World coords: "+xy);
-//     var pixNo = getPixNo(xy[0], xy[1]);
 	var pixNo = getPixNo(rxyz);
     console.log("pixNo clicked: "+pixNo);
 }
@@ -846,20 +827,16 @@ function startup() {
     canvas.style.zIndex   = 8;
     canvas.style.position = "absolute";
     canvas.style.border   = "1px solid";
-    
-//    currMapURL = defaultMapURL;
-//    currMapURL = getSkyDyIdx(pwgl.defaultMapId).URL;
+
     var defaultMap = getSkyDyIdx(pwgl.defaultMapId); 
     defaultMap.selected = true;
     defaultMap.shaderIdx = 0;
-    
-    
-    
-    pwgl.loadedSkiesIds[pwgl.loadedSkiesIds.length++] = pwgl.defaultMapId;
+    pwgl.texturesTransparencyArray[0] = 1.0;
+    pwgl.loadedSkiesIds[0] = pwgl.defaultMapId;
     
     div.appendChild(canvas)
     offset = (document.getElementById("myGLCanvas")).getBoundingClientRect();
-	console.log(offset);
+//	console.log(offset);
 	canvas.addEventListener('webglcontextlost', handleContextLost, false);
 	canvas.addEventListener('webglcontextrestored', handleContextRestored, false);
 	
@@ -874,33 +851,42 @@ function startup() {
     mat4.identity(pwgl.skyRotationMatrix);
 
 	
-    var coordsDiv = document.getElementById('coords');
-    var coordsHMSDiv = document.getElementById('coordsHMS');
+//    var coordsDiv = document.getElementById('coords');
+//    var coordsHMSDiv = document.getElementById('coordsHMS');
     fovDiv = document.getElementById('fov');
     fovDiv.innerHTML = "fov: "+fov+"<sup>&#8728;</sup>";
 	
-	canvas.onmousemove = function(ev) {   
-
-		var rxyz = rotateViewXY(ev.clientX, ev.clientY);;
-	    var radec = modelToRaDec(rxyz);
-	    coordsDiv.innerHTML = "ra: "+radec[0]+" dec: "+radec[1];
-	    var raHMS = convertRa2HMS(radec[0]);
-	    var decDMS = convertDec2DMS(radec[1]);
-	    coordsHMSDiv.innerHTML = raHMS[0]+" "+raHMS[1]+" "+raHMS[2]+" "+decDMS[0]+" "+decDMS[1]+" "+decDMS[2];
-	    
-// 	    if (mouseDown){
-// 			addTextures();
-// 	    }
-	}
+//	canvas.onmousemove = function(ev) {   
+//
+//		var rxyz = rotateViewXY(ev.clientX, ev.clientY);;
+//	    var radec = modelToRaDec(rxyz);
+//	    coordsDiv.innerHTML = "ra: "+radec[0]+" dec: "+radec[1];
+//	    var raHMS = convertRa2HMS(radec[0]);
+//	    var decDMS = convertDec2DMS(radec[1]);
+//	    coordsHMSDiv.innerHTML = raHMS[0]+" "+raHMS[1]+" "+raHMS[2]+" "+decDMS[0]+" "+decDMS[1]+" "+decDMS[2];
+//	    
+//	}
 	
 	var container = document.getElementById("container");
 	container.addEventListener( 'mousewheel', onMouseWheel, false );
 	container.addEventListener( 'DOMMouseScroll', onMouseWheel, false);
 	window.addEventListener( 'resize', onWindowResized, false );
+	canvas.onmousemove = handleMouseMove;
 	canvas.onmousedown = handleMouseDown;
     document.onmouseup = handleMouseUp;
     
 	draw();
+}
+
+function handleMouseMove(ev){
+	var coordsDiv = document.getElementById('coords');
+	var coordsHMSDiv = document.getElementById('coordsHMS');
+	var rxyz = rotateViewXY(ev.clientX, ev.clientY);;
+    var radec = modelToRaDec(rxyz);
+    coordsDiv.innerHTML = "ra: "+radec[0]+" dec: "+radec[1];
+    var raHMS = convertRa2HMS(radec[0]);
+    var decDMS = convertDec2DMS(radec[1]);
+    coordsHMSDiv.innerHTML = raHMS[0]+" "+raHMS[1]+" "+raHMS[2]+" "+decDMS[0]+" "+decDMS[1]+" "+decDMS[2];
 }
 
 function convertXY2World(x,y){
