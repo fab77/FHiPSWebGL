@@ -140,12 +140,15 @@ function loadShaderFromDOM(id) {
 function draw(){
 	var xyz = getCoordsCenter();
 	currentcc = modelToRaDec(xyz);
-	if (!fovInRange()){
-		console.log("redraw");
-		setupBuffers();
-		setupTextures();
-		oldFov = fov;
-	}else if (mouseDown){
+//	if (!fovInRange()){
+//		console.log("redraw");
+//		setupBuffers();
+//		setupTextures();
+//		oldFov = fov;
+//	}else if (mouseDown){
+//		addTextures();
+//    }
+	if (mouseDown && fovInRange()){
 		addTextures();
     }
 
@@ -201,15 +204,19 @@ function draw(){
     	
     		
     }else {
-    	gl.activeTexture(gl.TEXTURE0);
+//    	gl.activeTexture(gl.TEXTURE0);
+    	for(var j=0; j<pwgl.texturesArray.length;j++){
+			gl.activeTexture(gl.TEXTURE0+j);
+//			gl.bindTexture(gl.TEXTURE_2D, pwgl.texturesArray[j][0]);
+			for (var i=0;i<maxNPix;i++){
+	    		gl.bindTexture(gl.TEXTURE_2D, pwgl.texturesArray[j][i]);
+	        	gl.drawElements(gl.TRIANGLES, 6, 
+	                    gl.UNSIGNED_SHORT, 12*i);
+//	         	gl.drawElements(gl.TRIANGLES, 12, 
+//	                     gl.UNSIGNED_SHORT, 24*i);
+	        }	
+		}
     	
-    	for (var i=0;i<maxNPix;i++){
-    		gl.bindTexture(gl.TEXTURE_2D, pwgl.texturesArray0[i]);
-        	gl.drawElements(gl.TRIANGLES, 6, 
-                    gl.UNSIGNED_SHORT, 12*i);
-//         	gl.drawElements(gl.TRIANGLES, 12, 
-//                     gl.UNSIGNED_SHORT, 24*i);
-        }	
     }
     
     
@@ -407,7 +414,6 @@ function changeSkyTransparency(skyidx, transpValue){
 function addSky(skyidx){
 	console.log("skyidx "+skyidx);
 	var shaderIndex = pwgl.loadedSkiesIds.indexOf(parseInt(skyidx));
-	console.log("shaderIndex "+shaderIndex);
 	if (shaderIndex !== -1){
 		return;
 	}
@@ -415,14 +421,16 @@ function addSky(skyidx){
 	var currMap = getSkyDyIdx(parseInt(skyidx));
 	currMap.selected = true;
 	pwgl.loadedSkiesIds[pwgl.loadedSkiesIds.length++] = currMap.index;
+	shaderIndex = pwgl.loadedSkiesIds.indexOf(parseInt(currMap.index));
 	
-	if (pwgl.loadedSkiesIds.length == 1){
+	
+	if (shaderIndex == 0){
 		console.log("Factor Shader 0: "+1.0);
 		gl.uniform1f(pwgl.uniformVertexTextureFactor0Loc, 1.0);	
-	}else if (pwgl.loadedSkiesIds.length == 2){
+	}else if (shaderIndex == 1){
 		console.log("Factor Shader 1: "+1.0);
 		gl.uniform1f(pwgl.uniformVertexTextureFactor1Loc, 1.0);
-	}else if (pwgl.loadedSkiesIds.length == 3){
+	}else if (shaderIndex == 2){
 		console.log("Factor Shader 2: "+1.0);
 		gl.uniform1f(pwgl.uniformVertexTextureFactor2Loc, 1.0);
 	}
@@ -432,9 +440,14 @@ function addSky(skyidx){
 }
 
 function setupTextures(forceReload){
-	pwgl.texturesArray0 = [];
-	pwgl.texturesArray1 = [];
-	pwgl.texturesArray2 = [];
+//	pwgl.texturesArray0 = [];
+//	pwgl.texturesArray1 = [];
+//	pwgl.texturesArray2 = [];
+	
+	for(var i=0; i<pwgl.texturesArray; i++){
+		pwgl.texturesArray[i] = [];
+	}
+	
 	pwgl.loadedTextures.splice(0, pwgl.loadedTextures.length);
 //	pwgl.loadedTextures = [];
 	console.log("setupTexture "+pwgl.loadedTextures );
@@ -479,46 +492,93 @@ function addTextures(forceReload){
 			
 		pwgl.loadedTextures = [];
 	}else if (mouseDown || !fovInRange() || forceReload){
-		if (forceReload){
-			pwgl.texturesArray0.splice(0, pwgl.texturesArray0.length);
-		}
-			
-	
-		console.log("loading single textures");
 		var toBeLoadedTextures = [];
-		var cc = getCoordsCenter();
-		console.log("center coords in texture: "+cc);
-		var ccPixNo = getPixNo(cc);;
-		var index = 0;
-		
-		if (pwgl.loadedTextures.indexOf(ccPixNo) == -1){
-			console.log("Adding ccpix: "+ccPixNo);
-			toBeLoadedTextures[index] = ccPixNo;
-			index++;
-		}
-		for (var i=-1; i<=1.1;i=i+0.25){
-			for (var j=-1; j<=1;j=j+0.25){
-				var xy = [i * 1/zoom,j * 1/zoom];
-				var xyz = worldToModel(xy);
-			    var rxyz = [];
-			    rxyz[0] = pwgl.skyRotationMatrix[0] * xyz[0] + pwgl.skyRotationMatrix[1] * xyz[1] + pwgl.skyRotationMatrix[2] * xyz[2];
-			    rxyz[1] = pwgl.skyRotationMatrix[4] * xyz[0] + pwgl.skyRotationMatrix[5] * xyz[1] + pwgl.skyRotationMatrix[6] * xyz[2];
-			    rxyz[2] = pwgl.skyRotationMatrix[8] * xyz[0] + pwgl.skyRotationMatrix[9] * xyz[1] + pwgl.skyRotationMatrix[10] * xyz[2];
+		for (var k=0; k<pwgl.loadedSkiesIds.length && k<8;k++){
+			if (forceReload){
+				pwgl.texturesArray[k].splice(0, pwgl.texturesArray[k].length);
+			}
+			console.log("loading single textures");
+			if (toBeLoadedTextures.length <= 0){
+				var cc = getCoordsCenter();
+				console.log("center coords in texture: "+cc);
+				var ccPixNo = getPixNo(cc);;
+				var index = 0;
 				
-				
-				var currPix = getPixNo(rxyz);
-				if (pwgl.loadedTextures.indexOf(currPix) == -1){
-					pwgl.loadedTextures[pwgl.loadedTextures.length] = currPix;
-					toBeLoadedTextures[index] = currPix;
+				if (pwgl.loadedTextures.indexOf(ccPixNo) == -1){
+					console.log("Adding ccpix: "+ccPixNo);
+					toBeLoadedTextures[index] = ccPixNo;
 					index++;
 				}
+				
+				for (var i=-1; i<=1.1;i=i+0.25){
+					for (var j=-1; j<=1;j=j+0.25){
+						var xy = [i * 1/zoom,j * 1/zoom];
+						var xyz = worldToModel(xy);
+					    var rxyz = [];
+					    rxyz[0] = pwgl.skyRotationMatrix[0] * xyz[0] + pwgl.skyRotationMatrix[1] * xyz[1] + pwgl.skyRotationMatrix[2] * xyz[2];
+					    rxyz[1] = pwgl.skyRotationMatrix[4] * xyz[0] + pwgl.skyRotationMatrix[5] * xyz[1] + pwgl.skyRotationMatrix[6] * xyz[2];
+					    rxyz[2] = pwgl.skyRotationMatrix[8] * xyz[0] + pwgl.skyRotationMatrix[9] * xyz[1] + pwgl.skyRotationMatrix[10] * xyz[2];
+						
+						
+						var currPix = getPixNo(rxyz);
+						
+						if (pwgl.loadedTextures.indexOf(currPix) == -1){
+							pwgl.loadedTextures[pwgl.loadedTextures.length] = currPix;
+							toBeLoadedTextures[index] = currPix;
+							index++;
+						}
+					}
+				}
+			}
+			console.log("toBeLoadedTextures");
+			console.log(toBeLoadedTextures);
+			currMap = getSkyDyIdx(pwgl.loadedSkiesIds[k]);
+			console.log(currMap );
+			for (var i=0; i<toBeLoadedTextures.length;i++){
+				pwgl.texturesArray[k][toBeLoadedTextures[i]] = gl.createTexture();
+				loadImageForTexture(currMap.URL+"/Norder3/Dir0/Npix"+toBeLoadedTextures[i]+".jpg", pwgl.texturesArray[k][toBeLoadedTextures[i]], k);
 			}
 		}
-		for (var i=0; i<toBeLoadedTextures.length;i++){
-			pwgl.texturesArray0[toBeLoadedTextures[i]] = gl.createTexture();
-			loadImageForTexture(currMap+"/Norder3/Dir0/Npix"+toBeLoadedTextures[i]+".jpg", pwgl.texturesArray0[toBeLoadedTextures[i]]);
-			
-		}
+//		if (forceReload){
+//			pwgl.texturesArray0.splice(0, pwgl.texturesArray0.length);
+//		}
+//			
+//	
+//		console.log("loading single textures");
+//		var toBeLoadedTextures = [];
+//		var cc = getCoordsCenter();
+//		console.log("center coords in texture: "+cc);
+//		var ccPixNo = getPixNo(cc);;
+//		var index = 0;
+//		
+//		if (pwgl.loadedTextures.indexOf(ccPixNo) == -1){
+//			console.log("Adding ccpix: "+ccPixNo);
+//			toBeLoadedTextures[index] = ccPixNo;
+//			index++;
+//		}
+//		for (var i=-1; i<=1.1;i=i+0.25){
+//			for (var j=-1; j<=1;j=j+0.25){
+//				var xy = [i * 1/zoom,j * 1/zoom];
+//				var xyz = worldToModel(xy);
+//			    var rxyz = [];
+//			    rxyz[0] = pwgl.skyRotationMatrix[0] * xyz[0] + pwgl.skyRotationMatrix[1] * xyz[1] + pwgl.skyRotationMatrix[2] * xyz[2];
+//			    rxyz[1] = pwgl.skyRotationMatrix[4] * xyz[0] + pwgl.skyRotationMatrix[5] * xyz[1] + pwgl.skyRotationMatrix[6] * xyz[2];
+//			    rxyz[2] = pwgl.skyRotationMatrix[8] * xyz[0] + pwgl.skyRotationMatrix[9] * xyz[1] + pwgl.skyRotationMatrix[10] * xyz[2];
+//				
+//				
+//				var currPix = getPixNo(rxyz);
+//				if (pwgl.loadedTextures.indexOf(currPix) == -1){
+//					pwgl.loadedTextures[pwgl.loadedTextures.length] = currPix;
+//					toBeLoadedTextures[index] = currPix;
+//					index++;
+//				}
+//			}
+//		}
+//		for (var i=0; i<toBeLoadedTextures.length;i++){
+//			pwgl.texturesArray0[toBeLoadedTextures[i]] = gl.createTexture();
+//			loadImageForTexture(currMap+"/Norder3/Dir0/Npix"+toBeLoadedTextures[i]+".jpg", pwgl.texturesArray0[toBeLoadedTextures[i]]);
+//			
+//		}
 	}
 	console.log("end of addTextures: "+pwgl.loadedTextures);
 	
@@ -711,6 +771,15 @@ function onMouseWheel(ev){
 	oldFov = fov;
 	fov = 180/zoom;
 	fovDiv.innerHTML = "fov: "+fov+"<sup>&#8728;</sup>";
+	if (!fovInRange()){
+		console.log("redraw");
+		setupBuffers();
+		setupTextures();
+		oldFov = fov;
+	}
+//	else if (mouseDown){
+//		addTextures();
+//    }
 }
 
 function handleMouseDown(event) {
