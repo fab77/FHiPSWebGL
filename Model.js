@@ -21,9 +21,6 @@ var skies = [
 		"shaderIdx": null,
 		"selected":false
 	}
-	
-	
-	
 ];
 
 function getSkyDyIdx(idx){
@@ -34,3 +31,38 @@ function getSkyDyIdx(idx){
 	}
 	return skies[0];
 }
+
+function getSkyByName(skyName){
+	for (var i=0; i<skies.length; i++){
+		if (skies[i].name == skyName){
+			return skies[i];
+		}
+	}
+	return skies[0];
+}
+
+
+
+function Sky(JSONSky, idx){
+	this.baseURL = JSONSky.URL;
+	this.name = JSONSky.name;
+	this.initTextures();
+	this.idx = idx;
+}
+
+Sky.prototype.initTextures = function(){
+	this.textures = new SkyTexture();
+};
+
+//Sky.prototype.getShadersIndex = function(){
+//	return pwgl.selectedSkies.indexOf(this);
+//};
+
+function SkyTexture(){
+	this.needsRefresh = true;
+	this.opacity = 1.00 * 100.0/100.0;
+	this.images = [];
+//	this.shaderIndex;
+}
+
+

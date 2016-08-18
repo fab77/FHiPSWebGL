@@ -21,25 +21,23 @@
 <script src="lib/glMatrix/glMatrix.js"></script>
 
 <script src="FabViewer.js"></script>
+<script src="WebGLManager.js"></script>
+<script src="ShaderManager.js"></script>
+<script src="BuffersManager.js"></script>
+<script src="TextureManager.js"></script>
 <script src="Model.js"></script>
 <script id="shader-vs" type="x-shader/x-vertex">
 	attribute vec3 aVertexPosition;
 	attribute vec2 aTextureCoordinates;
-	//uniform float aFactor0;
-	//uniform float aFactor1;
 
 	uniform mat4 uMVMatrix;
 	uniform mat4 uPMatrix;
   
   	varying vec2 vTextureCoordinates;
-	//varying float vFactor0;
-	//varying float vFactor1;
 
 	void main() {
 		gl_Position = uPMatrix * uMVMatrix * vec4(aVertexPosition, 1.0);
 		vTextureCoordinates = aTextureCoordinates;
-		//vFactor0 = aFactor0;
-		//vFactor1 = aFactor1;
 	}
 </script>
 
@@ -55,35 +53,20 @@
 	uniform float uFactor2;
 
   	void main() {
-		//float tex0Active = 0.0;
-		//float tex1Active = 0.0;
-		//float tex2Active = 0.0;
 
 		vec3 finalColor;
 
-		//vec4 color0 = vec4(0.0, 0.0, 0.0, 0.0);
-		//vec3 finalColor0 = vec3(color0.x/uFactor0, color0.y/uFactor0, color0.z /uFactor0);
 		if (uFactor0 >= 0.0){
-			//tex0Active = 1.0;
 			vec4 color0 = texture2D(uSampler0, vTextureCoordinates);
 			finalColor = vec3(finalColor.x +  color0.x *uFactor0 ,finalColor.y +  color0.y*uFactor0,finalColor.z +  color0.z*uFactor0); 
-			//finalColor0 = vec3(color0.x/uFactor0, color0.y/uFactor0, color0.z /uFactor0);
 		}
 		 
-
-		//vec4 color1 = vec4(0.0, 0.0, 0.0, 0.0);
-		//vec3 finalColor1 = vec3(color1.x/uFactor1, color1.y/uFactor1, color1.z /uFactor1);
 		if (uFactor1 >= 0.0){
-			//tex1Active = 1.0;
 			vec4 color1 = texture2D(uSampler1, vTextureCoordinates);
 			finalColor = vec3(finalColor.x +  color1.x*uFactor1,finalColor.y +  color1.y*uFactor1,finalColor.z +  color1.z*uFactor1);
-			//finalColor1 = vec3(color1.x/uFactor1, color1.y/uFactor1, color1.z /uFactor1);
 		}
 
-		// vec4 color2 = vec4(0.0, 0.0, 0.0, 0.0);
-		//vec3 finalColor2 = vec3(color2.x/uFactor2, color2.y/uFactor2, color2.z /uFactor2);
 		if (uFactor2 >= 0.0){
-			//tex2Active = 1.0;
 			vec4 color2 = texture2D(uSampler2, vTextureCoordinates);
 			finalColor = vec3(finalColor.x +  color2.x*uFactor2,finalColor.y +  color2.y*uFactor2,finalColor.z +  color2.z*uFactor2);
 		}
@@ -104,53 +87,48 @@
 
 <script type="text/javascript">
 window.onload = function(){
-	var skiesDiv = document.getElementById("skies");
-// 	console.log(skies);
-// 	console.log(skies.length);
-// 	console.log(skies[0].name);
-	for (var i=0; i<skies.length; i++){
-		var checkbox = document.createElement('input');
-		checkbox.type = "checkbox";
-		checkbox.name = "hips";
-		checkbox.value = skies[i].index;
-		checkbox.id = "hips"+skies[i].index;
-		if (skies[i].index == pwgl.defaultMapId){
-			checkbox.checked = true;
-		}
+// 	var skiesDiv = document.getElementById("skies");
+// 	for (var i=0; i<skies.length; i++){
+// 		var checkbox = document.createElement('input');
+// 		checkbox.type = "checkbox";
+// 		checkbox.name = "hips";
+// 		checkbox.value = skies[i].index;
+// 		checkbox.id = "hips"+skies[i].index;
+// 		if (skies[i].index == pwgl.defaultMapId){
+// 			checkbox.checked = true;
+// 		}
 		
-		var label = document.createElement('label')
-		label.htmlFor = checkbox.id;
-		label.appendChild(document.createTextNode(skies[i].name));
+// 		var label = document.createElement('label')
+// 		label.htmlFor = checkbox.id;
+// 		label.appendChild(document.createTextNode(skies[i].name));
 
 		
-		var range = document.createElement('input');
-		range.type = "range";
-		range.name = "transparency";
-		range.id = skies[i].index;
-		range.value = "100";
-		range.min = "0";
-		range.max = "100";
+// 		var range = document.createElement('input');
+// 		range.type = "range";
+// 		range.name = "transparency";
+// 		range.id = skies[i].index;
+// 		range.value = "100";
+// 		range.min = "0";
+// 		range.max = "100";
 		
-		skiesDiv.appendChild(checkbox);
-		skiesDiv.appendChild(label);
-		skiesDiv.appendChild(range);
+// 		skiesDiv.appendChild(checkbox);
+// 		skiesDiv.appendChild(label);
+// 		skiesDiv.appendChild(range);
 
-		skiesDiv.appendChild(document.createElement("br"));
+// 		skiesDiv.appendChild(document.createElement("br"));
 
-		document.getElementById(checkbox.id).addEventListener("click", function(){
-			if (this.checked){
-// 				console.log(this);	
-				addSky(this.value);
-			}else{
-				removeSky(this.value);
-			}
-		});
+// 		document.getElementById(checkbox.id).addEventListener("click", function(){
+// 			if (this.checked){
+// 				addSky(this.value);
+// 			}else{
+// 				removeSky(this.value);
+// 			}
+// 		});
 		
-		document.getElementById(range.id).addEventListener("change", function(){
-// 			console.log(this.value);
-			changeSkyTransparency(this.id, this.value);
-		});
-	}
+// 		document.getElementById(range.id).addEventListener("change", function(){
+// 			changeSkyTransparency(this.id, this.value);
+// 		});
+// 	}
 
 	startup();
 }
