@@ -7,15 +7,15 @@ function handleContextLost(event){
 	
 	// Ignore all ongoing image load by removing
 	// their onload handler
-	for (var i=0; i < pwgl.ongoingImageLoads0.length; i++){
-		pwgl.ongoingImageLoads0[i] = undefined;
-	}
-	for (var i=0; i < pwgl.ongoingImageLoads1.length; i++){
-		pwgl.ongoingImageLoads1[i] = undefined;
-	}
-	
-	pwgl.ongoingImageLoads0 = [];
-	pwgl.ongoingImageLoads1 = [];
+//	for (var i=0; i < pwgl.ongoingImageLoads0.length; i++){
+//		pwgl.ongoingImageLoads0[i] = undefined;
+//	}
+//	for (var i=0; i < pwgl.ongoingImageLoads1.length; i++){
+//		pwgl.ongoingImageLoads1[i] = undefined;
+//	}
+//	
+//	pwgl.ongoingImageLoads0 = [];
+//	pwgl.ongoingImageLoads1 = [];
 }
 
 function handleContextRestored(event){
@@ -75,6 +75,10 @@ function draw(){
 			gl.uniform1f(pwgl.uniformVertexTextureFactorLoc[j], sky.textures.opacity);
 	 	}
 
+	 	for (var i=pwgl.selectedSkies.length; i<8; i++){
+	 		gl.uniform1f(pwgl.uniformVertexTextureFactorLoc[i], -99);	
+	 	}
+	 	
     	for (var i=0;i<maxNPix;i++){
         	gl.drawElements(gl.TRIANGLES, 6, 
                     gl.UNSIGNED_SHORT, 12*i);
@@ -90,32 +94,14 @@ function draw(){
 	    		gl.bindTexture(gl.TEXTURE_2D, sky.textures.images[i]);
 	    		gl.uniform1f(pwgl.uniformVertexTextureFactorLoc[j], sky.textures.opacity);
 	        }
-//			for (var k=pwgl.selectedSkies.length;k<8;k++){
-//				gl.uniform1f(pwgl.uniformVertexTextureFactorLoc[k], -99);
-//	    	}
+			for (var k=pwgl.selectedSkies.length;k<8;k++){
+				gl.uniform1f(pwgl.uniformVertexTextureFactorLoc[k], -99);
+	    	}
 			gl.drawElements(gl.TRIANGLES, 6, 
                     gl.UNSIGNED_SHORT, 12*i);
 //         	gl.drawElements(gl.TRIANGLES, 12, 
 //            gl.UNSIGNED_SHORT, 24*i);
 		}
-
-
-//    	for (var i=0;i<maxNPix;i++){
-//			for(var j=0; j<pwgl.loadedSkiesIds.length && j<8;j++){
-////	    		console.log("Drawing texture "+j);
-//				gl.activeTexture(gl.TEXTURE0+j);
-//	    		gl.bindTexture(gl.TEXTURE_2D, pwgl.texturesArray[j][i]);
-//	    		gl.uniform1f(pwgl.uniformVertexTextureFactorLoc[j], pwgl.texturesTransparencyArray[j]);
-//	        }
-//			for (var k=pwgl.loadedSkiesIds.length;k<8;k++){
-//				gl.uniform1f(pwgl.uniformVertexTextureFactorLoc[k], -99);
-//	    	}
-//			gl.drawElements(gl.TRIANGLES, 6, 
-//                    gl.UNSIGNED_SHORT, 12*i);
-////         	gl.drawElements(gl.TRIANGLES, 12, 
-////            gl.UNSIGNED_SHORT, 24*i);
-//		}
-
     }
 }
 

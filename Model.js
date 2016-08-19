@@ -7,19 +7,22 @@ var skies = [
 		"URL":"http://skies.esac.esa.int/DSSColor/",
 		"index":0,
 		"shaderIdx": null,
-		"selected":true
+		"selected":false,
+		"maxOrder": 9
 	},{
 		"name":"AllWISE Color",
 		"URL":"http://skies.esac.esa.int/AllWISEColor/",
 		"index":1,
 		"shaderIdx": null,
-		"selected":false
+		"selected":false,
+		"maxOrder": 8
 	},{
 		"name":"Herschel PACS RGB 70+160",
 		"URL":"http://skies.esac.esa.int/Herschel/PACS-color/",
 		"index":2,
 		"shaderIdx": null,
-		"selected":false
+		"selected":false,
+		"maxOrder": 9
 	}
 ];
 
@@ -48,6 +51,7 @@ function Sky(JSONSky, idx){
 	this.name = JSONSky.name;
 	this.initTextures();
 	this.idx = idx;
+	this.maxOrder = JSONSky.maxOrder;
 }
 
 Sky.prototype.initTextures = function(){

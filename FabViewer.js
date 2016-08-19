@@ -86,20 +86,10 @@ function removeSky(skyidx){
 function addSky(skyidx){
 	console.log("-------Inside AddSky-------");
 	var sky = pwgl.availableSkies[skyidx];
+	sky.textures.needsRefresh = true;
 	var shaderIndex = pwgl.selectedSkies.push(sky);
-	console.log(pwgl.selectedSkies);
-	addTextures(true, shaderIndex);
+	addTextures(true);
 	console.log("-------End of AddSky-------");
-}
-
-function fovInRange(){
-	if ( fov >= 50 && oldFov >= 50){
-		return true;
-	}
-	if ( fov < 50 && oldFov < 50){
-		return true;
-	}
-	return false;
 }
 
 function getPixNo(xyz){
@@ -120,6 +110,64 @@ function degToRad(degrees) {
     return degrees * Math.PI / 180;
 }
 
+function fovInRange(){
+	
+	if ( fov >= 50 && oldFov >= 50){
+		console.log("fov >= 50 && oldFov >= 50");
+		return true;
+	}
+	
+	if ( fov < 8 && oldFov < 8){
+//		console.log("fov < 8 && oldFov < 8");
+		return true;
+	}else if ( fov < 8 && (oldFov >= 8 || oldFov <4)){
+		console.log("fov < 8 && (oldFov >= 8 || oldFov <4)");
+		return false;
+	}
+	if ( fov < 16 && oldFov < 16 && oldFov >=8){
+//		console.log("fov < 16 && oldFov < 16");
+		return true;
+	}else if ( fov < 16 && (oldFov >= 16 || oldFov <8)){
+		console.log("fov < 16 && (oldFov >= 16 || oldFov <8)");
+		return false;
+	}
+	if ( fov < 50 && oldFov < 50 && oldFov >= 16){
+//		console.log("fov < 50 && oldFov < 50");
+		return true;
+	}else if (fov < 50 && (oldFov >= 50 || oldFov<16)){
+		console.log("fov < 50 && (oldFov >= 50 || oldFov<16)");
+		return false;
+	}
+	return false;
+}
+
+function refreshHealpix(){
+	console.log("refreshing Healpix");
+	if (fov >= 16){
+		this.norder = 3;
+		this.nside = Math.pow(2, norder);
+		this.healpix = new Healpix(nside);
+		this.maxNPix = healpix.getNPix();
+	}else if (fov < 8){
+		this.norder = 5;
+		this.nside = Math.pow(2, norder);
+		this.healpix = new Healpix(nside);
+		this.maxNPix = healpix.getNPix();
+	}else if (fov < 16){
+		this.norder = 4;
+		this.nside = Math.pow(2, norder);
+		this.healpix = new Healpix(nside);
+		this.maxNPix = healpix.getNPix();
+	}
+	
+	for (var k=0; k<pwgl.selectedSkies.length && k<8;k++){
+		pwgl.selectedSkies[k].textures.needsRefresh = true;
+	}
+	
+	console.log("norder: "+this.norder);
+	console.log("maxNPix: "+this.maxNPix);
+	
+}
 
 
 function onMouseWheel(ev){
@@ -138,9 +186,11 @@ function onMouseWheel(ev){
 	}
 	oldFov = fov;
 	fov = 180/zoom;
+//	console.log("oldFov: "+oldFov+" fov: "+fov);
 	fovDiv.innerHTML = "fov: "+fov+"<sup>&#8728;</sup>";
 	if (!fovInRange()){
 		console.log("redraw");
+		refreshHealpix();
 		setupBuffers();
 		setupTextures();
 		oldFov = fov;
