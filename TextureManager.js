@@ -5,6 +5,7 @@ function setupTextures(forceReload){
 	addTextures(forceReload);
 }
 
+
 function addTextures(forceReload){
 	var currMap = currMapURL;
 	// fullZoom
@@ -21,46 +22,27 @@ function addTextures(forceReload){
 	 	pwgl.loadedTextures.splice(0, pwgl.loadedTextures.length);
 	}else if (mouseDown || !fovInRange() || forceReload){
 		var toBeLoadedTextures = [];
-		console.log(pwgl.selectedSkies);
+		if (mouseDown){
+			updateVisiblePixels(false);
+		    setupBuffers();
+		}
 		for (var k=0; k<pwgl.selectedSkies.length && k<8;k++){
-			console.log("K:"+k);
 			
+		    
 			sky = pwgl.selectedSkies[k];
+			console.log("k: "+k);
 			console.log(sky);
-			console.log("Sky "+sky.name+" needs refresh?"+sky.textures.needsRefresh);
-			if (sky.textures.needsRefresh){
-				console.log(1);
+			if (sky.textures.needsRefresh || !fovInRange()){
 				sky.textures.images.splice(0, sky.textures.images.length);
 			}
-			console.log(2);
 			if (toBeLoadedTextures.length <= 0){
-				console.log(3);
-				var cc = getCoordsCenter();
-				var ccPixNo = getPixNo(cc);;
-				var index = 0;
-				if (pwgl.loadedTextures.indexOf(ccPixNo) == -1 || sky.textures.needsRefresh){
-					console.log(4);
-					toBeLoadedTextures.push(ccPixNo);
-				}
-				console.log(5);
-				var neighbours = this.healpix.neighbours(ccPixNo);
-				for(var n=0; n<neighbours.length; n++){
-					if ((pwgl.loadedTextures.indexOf(neighbours[n]) == -1  || sky.textures.needsRefresh) && neighbours[n] !== -1){
-						pwgl.loadedTextures.push(neighbours[n]);
-						toBeLoadedTextures.push(neighbours[n]);
+				
+				for (var n=0; n<pwgl.pixels.length;n++){
+					if (pwgl.loadedTextures.indexOf(pwgl.pixels[n]) == -1 || sky.textures.needsRefresh){
+						toBeLoadedTextures.push(pwgl.pixels[n]);
+						pwgl.loadedTextures.push(pwgl.pixels[n]);
 					}
 				}
-				console.log(6);
-				for(var n=0; n<neighbours.length; n++){
-					var currNeighbours = this.healpix.neighbours(neighbours[n]);
-					for(var z=0; z<currNeighbours.length;z++){
-						if ((pwgl.loadedTextures.indexOf(currNeighbours[z]) == -1  || sky.textures.needsRefresh) && currNeighbours[z] !== -1){
-							pwgl.loadedTextures.push(currNeighbours[z]);
-							toBeLoadedTextures.push(currNeighbours[z]);
-						}	
-					}
-				}
-				console.log(7);
 				
 //				// DO NOT DELETE - OLD GASHION METHOD TO GET NEIGHBOURS
 //				for (var i=-1; i<=1.1;i=i+0.25){
@@ -82,19 +64,107 @@ function addTextures(forceReload){
 //					}
 //				}
 			}
+//			console.log(pwgl.pixels);
+//			console.log(pwgl.loadedTextures);
+//			console.log(toBeLoadedTextures);
 			if (sky.textures.needsRefresh){
 				sky.textures.needsRefresh = false;
 			}
-			var dirNumber = "0"
+			var dirNumber = "0";
+			var texIdx = sky.textures.images.length;
+			console.log(toBeLoadedTextures);
 			for (var i=0; i<toBeLoadedTextures.length;i++){
-				sky.textures.images[toBeLoadedTextures[i]] = gl.createTexture();
+//				sky.textures.images[toBeLoadedTextures[i]] = gl.createTexture();
+				sky.textures.images[texIdx] = gl.createTexture();
 				dirNumber = Math.floor(toBeLoadedTextures[i] / 10000) * 10000;
 //				loadImageForTexture(sky.baseURL+"/Norder"+this.norder+"/Dir0/Npix"+toBeLoadedTextures[i]+".jpg", sky.textures.images[toBeLoadedTextures[i]], k);
-				loadImageForTexture(sky.baseURL+"/Norder"+this.norder+"/Dir"+dirNumber+"/Npix"+toBeLoadedTextures[i]+".jpg", sky.textures.images[toBeLoadedTextures[i]], k);
+//				loadImageForTexture(sky.baseURL+"/Norder"+this.norder+"/Dir"+dirNumber+"/Npix"+toBeLoadedTextures[i]+".jpg", sky.textures.images[toBeLoadedTextures[i]], k);
+				loadImageForTexture(sky.baseURL+"/Norder"+this.norder+"/Dir"+dirNumber+"/Npix"+toBeLoadedTextures[i]+".jpg", sky.textures.images[texIdx], k);
+				texIdx++;
 			}
+//			console.log(sky.textures.images);
 		}
 	}
 }
+
+//function addTextures(forceReload){
+//	var currMap = currMapURL;
+//	// fullZoom
+//	if (fov >=50){
+//	 	if (fovInRange() && !forceReload){
+//			return;
+//		}	 	
+//	 	var sky;
+//	 	for (var j=0; j<pwgl.selectedSkies.length && j<8;j++){
+//	 		sky = pwgl.selectedSkies[j];
+//	 		sky.textures.images[0] = gl.createTexture();
+//	 		loadImageForTexture(sky.baseURL+"/Norder3/Allsky.jpg", sky.textures.images[0], j);
+//	 	}
+//	 	pwgl.loadedTextures.splice(0, pwgl.loadedTextures.length);
+//	}else if (mouseDown || !fovInRange() || forceReload){
+//		var toBeLoadedTextures = [];
+//		for (var k=0; k<pwgl.selectedSkies.length && k<8;k++){
+//			
+//			sky = pwgl.selectedSkies[k];
+//			if (sky.textures.needsRefresh || !fovInRange() || forceReload){
+//				sky.textures.images.splice(0, sky.textures.images.length);
+//			}
+//			if (toBeLoadedTextures.length <= 0){
+//				var cc = getCoordsCenter();
+//				var ccPixNo = getPixNo(cc);
+//				if (pwgl.loadedTextures.indexOf(ccPixNo) == -1 || sky.textures.needsRefresh){
+//					toBeLoadedTextures.push(ccPixNo);
+//				}
+//				var neighbours = this.healpix.neighbours(ccPixNo);
+//				for(var n=0; n<neighbours.length; n++){
+//					if ((pwgl.loadedTextures.indexOf(neighbours[n]) == -1  || sky.textures.needsRefresh) && neighbours[n] !== -1){
+//						pwgl.loadedTextures.push(neighbours[n]);
+//						toBeLoadedTextures.push(neighbours[n]);
+//					}
+//				}
+//				for(var n=0; n<neighbours.length; n++){
+//					var currNeighbours = this.healpix.neighbours(neighbours[n]);
+//					for(var z=0; z<currNeighbours.length;z++){
+//						if ((pwgl.loadedTextures.indexOf(currNeighbours[z]) == -1  || sky.textures.needsRefresh) && currNeighbours[z] !== -1){
+//							pwgl.loadedTextures.push(currNeighbours[z]);
+//							toBeLoadedTextures.push(currNeighbours[z]);
+//						}	
+//					}
+//				}
+//				
+////				// DO NOT DELETE - OLD GASHION METHOD TO GET NEIGHBOURS
+////				for (var i=-1; i<=1.1;i=i+0.25){
+////					for (var j=-1; j<=1;j=j+0.25){
+////						var xy = [i * 1/zoom,j * 1/zoom];
+////						var xyz = worldToModel(xy);
+////					    var rxyz = [];
+////					    rxyz[0] = pwgl.skyRotationMatrix[0] * xyz[0] + pwgl.skyRotationMatrix[1] * xyz[1] + pwgl.skyRotationMatrix[2] * xyz[2];
+////					    rxyz[1] = pwgl.skyRotationMatrix[4] * xyz[0] + pwgl.skyRotationMatrix[5] * xyz[1] + pwgl.skyRotationMatrix[6] * xyz[2];
+////					    rxyz[2] = pwgl.skyRotationMatrix[8] * xyz[0] + pwgl.skyRotationMatrix[9] * xyz[1] + pwgl.skyRotationMatrix[10] * xyz[2];
+////						
+////						
+////						var currPix = getPixNo(rxyz);
+////						
+////						if (pwgl.loadedTextures.indexOf(currPix) == -1  || sky.textures.needsRefresh){
+////							pwgl.loadedTextures.push(currPix);
+////							toBeLoadedTextures.push(currPix);
+////						}
+////					}
+////				}
+//			}
+//			if (sky.textures.needsRefresh){
+//				sky.textures.needsRefresh = false;
+//			}
+//			var dirNumber = "0"
+//			for (var i=0; i<toBeLoadedTextures.length;i++){
+//				sky.textures.images[toBeLoadedTextures[i]] = gl.createTexture();
+//				dirNumber = Math.floor(toBeLoadedTextures[i] / 10000) * 10000;
+////				loadImageForTexture(sky.baseURL+"/Norder"+this.norder+"/Dir0/Npix"+toBeLoadedTextures[i]+".jpg", sky.textures.images[toBeLoadedTextures[i]], k);
+//				loadImageForTexture(sky.baseURL+"/Norder"+this.norder+"/Dir"+dirNumber+"/Npix"+toBeLoadedTextures[i]+".jpg", sky.textures.images[toBeLoadedTextures[i]], k);
+//			}
+//		}
+//	}
+//}
 
 function loadImageForTexture(url, texture, texunit){
 	var image = new Image();

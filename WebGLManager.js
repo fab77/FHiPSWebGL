@@ -79,7 +79,8 @@ function draw(){
 	 		gl.uniform1f(pwgl.uniformVertexTextureFactorLoc[i], -99);	
 	 	}
 	 	
-    	for (var i=0;i<maxNPix;i++){
+//    	for (var i=0;i<maxNPix;i++){
+	 	for (var i=0;i<pwgl.pixels.length;i++){
         	gl.drawElements(gl.TRIANGLES, 6, 
                     gl.UNSIGNED_SHORT, 12*i);
 //       	gl.drawElements(gl.TRIANGLES, 12, 
@@ -87,7 +88,8 @@ function draw(){
         }
     }else {
 
-    	for (var i=0;i<maxNPix;i++){
+//    	for (var i=0;i<maxNPix;i++){
+    	for (var i=0;i<pwgl.pixels.length;i++){
 			for(var j=0; j<pwgl.selectedSkies.length && j<8;j++){
 				sky = pwgl.selectedSkies[j];
 				gl.activeTexture(gl.TEXTURE0+j);

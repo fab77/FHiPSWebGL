@@ -25,6 +25,7 @@ var gl;
 var canvas;
 
 var pwgl = {
+		"pixels": [],
 		"selectedSkies": [],
 		"availableSkies": [],
 		"defaultSkyName": "DSS Color",
@@ -117,7 +118,24 @@ function fovInRange(){
 		return true;
 	}
 	
-	if ( fov < 8 && oldFov < 8){
+	if ( fov < 2 && oldFov < 2 && oldFov >=1){
+//		console.log("fov < 8 && oldFov < 8");
+		return true;
+	}else if ( fov < 2 && (oldFov >= 2 || oldFov <1)){
+		console.log("fov < 8 && (oldFov >= 8 || oldFov <4)");
+		console.log("oldFov "+oldFov);
+		return false;
+	}
+	
+	if ( fov < 4 && oldFov < 4 && oldFov >=2){
+//		console.log("fov < 4 && oldFov < 4");
+		return true;
+	}else if ( fov < 4 && (oldFov >= 4 || oldFov <2)){
+		console.log("fov < 4 && (oldFov >= 4 || oldFov <2)");
+		return false;
+	}
+	
+	if ( fov < 8 && oldFov < 8 && oldFov >=4){
 //		console.log("fov < 8 && oldFov < 8");
 		return true;
 	}else if ( fov < 8 && (oldFov >= 8 || oldFov <4)){
@@ -148,6 +166,16 @@ function refreshHealpix(){
 		this.nside = Math.pow(2, norder);
 		this.healpix = new Healpix(nside);
 		this.maxNPix = healpix.getNPix();
+	}else if (fov < 2){
+		this.norder = 7;
+		this.nside = Math.pow(2, norder);
+		this.healpix = new Healpix(nside);
+		this.maxNPix = healpix.getNPix();
+	}else if (fov < 4){
+		this.norder = 6;
+		this.nside = Math.pow(2, norder);
+		this.healpix = new Healpix(nside);
+		this.maxNPix = healpix.getNPix();
 	}else if (fov < 8){
 		this.norder = 5;
 		this.nside = Math.pow(2, norder);
@@ -164,6 +192,8 @@ function refreshHealpix(){
 		pwgl.selectedSkies[k].textures.needsRefresh = true;
 	}
 	
+	pwgl.loadedTextures.splice(0, pwgl.loadedTextures.length);
+//	pixels.splice(0, pixels.length);
 	console.log("norder: "+this.norder);
 	console.log("maxNPix: "+this.maxNPix);
 	
@@ -191,6 +221,7 @@ function onMouseWheel(ev){
 	if (!fovInRange()){
 		console.log("redraw");
 		refreshHealpix();
+		updateVisiblePixels(true);
 		setupBuffers();
 		setupTextures();
 		oldFov = fov;
@@ -207,11 +238,6 @@ function handleMouseDown(event) {
     lastMouseX = event.clientX;
     lastMouseY = event.clientY;
     var rxyz = convertXY2World(event.clientX, event.clientY);
-    
-//    console.log("clicked coords:");
-//    console.log(rxyz);
-    
-//     console.log("HTML coords: "+event.clientX+" "+event.clientY);
 	var pixNo = getPixNo(rxyz);
     console.log("pixNo clicked: "+pixNo);
 }
@@ -416,6 +442,7 @@ function startup() {
 	canvas.addEventListener('webglcontextrestored', handleContextRestored, false);
 	
 	gl = createGLContext(canvas);
+	updateVisiblePixels();
 	setupShaders();
 	setupBuffers();
 	setupTextures();
