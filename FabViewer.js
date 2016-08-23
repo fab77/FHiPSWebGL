@@ -10,10 +10,10 @@ var mouseDown = false;
 var lastMouseX, lastMouseY;
 var zoom = 1;
 var fovDiv = document.getElementById('fov');
-var fov = 180/zoom;
-canvasWidth = 600;
-canvasHeight = 600;
-var oldFov;
+var oldFov = fov = 180/zoom;
+var canvasWidth = 600;
+var canvasHeight = 600;
+//var oldFov;
 var oldcc;
 var defaultMapURL = "http://skies.esac.esa.int/DSSColor/";
 var currMapURL;
@@ -23,9 +23,10 @@ console.log("maxNPix: "+maxNPix);
 
 var gl;
 var canvas;
-
+ 
 var pwgl = {
 		"pixels": [],
+		"pixelsCache": [],
 		"selectedSkies": [],
 		"availableSkies": [],
 		"defaultSkyName": "DSS Color",
@@ -95,6 +96,10 @@ function addSky(skyidx){
 
 function getPixNo(xyz){
 	var p = new Pointing(new Vec3(xyz[0], xyz[1], xyz[2]));
+//	console.log("Pointing");
+//	console.log(p);
+//	console.log(this.healpix);
+	
 	var pixNo = this.healpix.ang2pix(p);
 	return pixNo;
 }
@@ -161,6 +166,7 @@ function fovInRange(){
 
 function refreshHealpix(){
 	console.log("refreshing Healpix");
+//	console.log("refreshing Healpix [nside]"+this.nside);
 	if (fov >= 16){
 		this.norder = 3;
 		this.nside = Math.pow(2, norder);
@@ -178,8 +184,8 @@ function refreshHealpix(){
 		this.maxNPix = healpix.getNPix();
 	}else if (fov < 8){
 		this.norder = 5;
-		this.nside = Math.pow(2, norder);
-		this.healpix = new Healpix(nside);
+		this.nside = Math.pow(2, this.norder);
+		this.healpix = new Healpix(this.nside);
 		this.maxNPix = healpix.getNPix();
 	}else if (fov < 16){
 		this.norder = 4;
@@ -187,15 +193,15 @@ function refreshHealpix(){
 		this.healpix = new Healpix(nside);
 		this.maxNPix = healpix.getNPix();
 	}
-	
+//	console.log("refreshing Healpix [nside]"+this.nside);
 	for (var k=0; k<pwgl.selectedSkies.length && k<8;k++){
 		pwgl.selectedSkies[k].textures.needsRefresh = true;
 	}
 	
-	pwgl.loadedTextures.splice(0, pwgl.loadedTextures.length);
+//	pwgl.loadedTextures.splice(0, pwgl.loadedTextures.length);
 //	pixels.splice(0, pixels.length);
-	console.log("norder: "+this.norder);
-	console.log("maxNPix: "+this.maxNPix);
+//	console.log("norder: "+this.norder);
+//	console.log("maxNPix: "+this.maxNPix);
 	
 }
 
@@ -235,6 +241,10 @@ function handleMouseDown(event) {
 //	console.log("center coords:"+getCoordsCenter());
 	
     mouseDown = true;
+//    if (mouseDown){
+//		updateVisiblePixels(false);
+//	    setupBuffers();
+//	}
     lastMouseX = event.clientX;
     lastMouseY = event.clientY;
     var rxyz = convertXY2World(event.clientX, event.clientY);
@@ -445,7 +455,7 @@ function startup() {
 	updateVisiblePixels();
 	setupShaders();
 	setupBuffers();
-	setupTextures();
+	setupTextures(true);
 	gl.clearColor(0.5,0.5,0.5, 1.0);
 	gl.enable(gl.DEPTH_TEST);
 	

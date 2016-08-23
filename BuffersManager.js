@@ -1,7 +1,7 @@
 /**
  * 
  */
-function updateVisiblePixels(clean){
+function updateVisiblePixelsOLD(clean){
 	if (clean){
 		pwgl.pixels.splice(0, pwgl.pixels.length);
 	}
@@ -31,6 +31,52 @@ function updateVisiblePixels(clean){
 	console.log("pixels.length "+pwgl.pixels.length);
 }
 
+
+function updateVisiblePixels(clean){
+	if (clean){
+		pwgl.pixels.splice(0, pwgl.pixels.length);
+		pwgl.pixelsCache.splice(0, pwgl.pixelsCache.length);
+	}
+	
+	
+	
+	if (fov >= 50){
+		console.log("ALL SKY");
+		for (var i=0; i<768;i++){
+			pwgl.pixels.push(i);
+		}
+	}else{
+		pwgl.pixelsCache = pwgl.pixels.slice();
+		pwgl.pixels.splice(0, pwgl.pixels.length);
+		
+		var cc = getCoordsCenter();
+		var ccPixNo = getPixNo(cc);
+		console.log("ccPixNo: "+ccPixNo)
+		if (pwgl.pixels.indexOf(ccPixNo) == -1){
+			pwgl.pixels.push(ccPixNo);	
+		}
+		for (var i=-1; i<=1.1;i=i+0.25){
+			for (var j=-1; j<=1;j=j+0.25){
+				var xy = [i * 1/zoom,j * 1/zoom];
+				var xyz = worldToModel(xy);
+			    var rxyz = [];
+			    rxyz[0] = pwgl.skyRotationMatrix[0] * xyz[0] + pwgl.skyRotationMatrix[1] * xyz[1] + pwgl.skyRotationMatrix[2] * xyz[2];
+			    rxyz[1] = pwgl.skyRotationMatrix[4] * xyz[0] + pwgl.skyRotationMatrix[5] * xyz[1] + pwgl.skyRotationMatrix[6] * xyz[2];
+			    rxyz[2] = pwgl.skyRotationMatrix[8] * xyz[0] + pwgl.skyRotationMatrix[9] * xyz[1] + pwgl.skyRotationMatrix[10] * xyz[2];
+				
+				
+				var currPix = getPixNo(rxyz);
+				
+				if (pwgl.pixels.indexOf(currPix) == -1){
+					pwgl.pixels.push(currPix);
+				}
+			}
+		}
+	}
+}
+
+
+
 function setupBuffers(){
 	
 	pwgl.vertexPositionBuffer = gl.createBuffer();
@@ -45,22 +91,44 @@ function setupBuffers(){
 	for (var i=0; i < nPixels; i++){
 		facesVec3Array = new Array();
 		facesVec3Array = healpix.getBoundaries(pwgl.pixels[i]);
-
-		vertexPosition[12*i] = (facesVec3Array[0].x).toFixed(17) ;
-		vertexPosition[12*i+1] = (facesVec3Array[0].y).toFixed(17) ;
-		vertexPosition[12*i+2] = (facesVec3Array[0].z).toFixed(17) ;
+//if (i>750){
+//	console.log("pix "+pwgl.pixels[i]);
+//	console.log(facesVec3Array);
+//}
 		
-		vertexPosition[12*i+3] = (facesVec3Array[1].x).toFixed(17) ;
-		vertexPosition[12*i+4] = (facesVec3Array[1].y).toFixed(17) ;
-		vertexPosition[12*i+5] = (facesVec3Array[1].z).toFixed(17) ;
+		vertexPosition[12*i] = facesVec3Array[0].x ;
+		vertexPosition[12*i+1] = facesVec3Array[0].y ;
+		vertexPosition[12*i+2] = facesVec3Array[0].z;
 		
-		vertexPosition[12*i+6] = (facesVec3Array[2].x).toFixed(17) ;
-		vertexPosition[12*i+7] = (facesVec3Array[2].y).toFixed(17) ;
-		vertexPosition[12*i+8] = (facesVec3Array[2].z).toFixed(17) ;
+		vertexPosition[12*i+3] = facesVec3Array[1].x;
+		vertexPosition[12*i+4] = facesVec3Array[1].y;
+		vertexPosition[12*i+5] = facesVec3Array[1].z;
 		
-		vertexPosition[12*i+9] = (facesVec3Array[3].x).toFixed(17) ;
-		vertexPosition[12*i+10] = (facesVec3Array[3].y).toFixed(17) ;
-		vertexPosition[12*i+11] = (facesVec3Array[3].z).toFixed(17) ;
+		vertexPosition[12*i+6] = facesVec3Array[2].x;
+		vertexPosition[12*i+7] = facesVec3Array[2].y;
+		vertexPosition[12*i+8] = facesVec3Array[2].z;
+		
+		vertexPosition[12*i+9] = facesVec3Array[3].x;
+		vertexPosition[12*i+10] = facesVec3Array[3].y ;
+		vertexPosition[12*i+11] = facesVec3Array[3].z;
+		
+//		vertexPosition[12*i] = (facesVec3Array[0].x).toFixed(17) ;
+//		vertexPosition[12*i+1] = (facesVec3Array[0].y).toFixed(17) ;
+//		vertexPosition[12*i+2] = (facesVec3Array[0].z).toFixed(17) ;
+//		
+//		vertexPosition[12*i+3] = (facesVec3Array[1].x).toFixed(17) ;
+//		vertexPosition[12*i+4] = (facesVec3Array[1].y).toFixed(17) ;
+//		vertexPosition[12*i+5] = (facesVec3Array[1].z).toFixed(17) ;
+//		
+//		vertexPosition[12*i+6] = (facesVec3Array[2].x).toFixed(17) ;
+//		vertexPosition[12*i+7] = (facesVec3Array[2].y).toFixed(17) ;
+//		vertexPosition[12*i+8] = (facesVec3Array[2].z).toFixed(17) ;
+//		
+//		vertexPosition[12*i+9] = (facesVec3Array[3].x).toFixed(17) ;
+//		vertexPosition[12*i+10] = (facesVec3Array[3].y).toFixed(17) ;
+//		vertexPosition[12*i+11] = (facesVec3Array[3].z).toFixed(17) ;
+		
+		
 		
 // 		p.x = (facesVec3Array[0].x + facesVec3Array[2].x)/2 +epsilon;
 // 		p.y = (facesVec3Array[0].y + facesVec3Array[2].y)/2 +epsilon;

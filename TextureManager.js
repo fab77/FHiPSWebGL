@@ -5,9 +5,94 @@ function setupTextures(forceReload){
 	addTextures(forceReload);
 }
 
-
 function addTextures(forceReload){
 	var currMap = currMapURL;
+	
+	if (!fovInRange()){
+//		pwgl.pixels.splice(0, pwgl.pixels.length);
+	}
+//	console.log(pwgl.pixels);
+	
+	// fullZoom
+	if (fov >=50){
+	 	if (fovInRange() && !forceReload){
+			return;
+		}	 	
+	 	var sky;
+	 	for (var j=0; j<pwgl.selectedSkies.length && j<8;j++){
+	 		sky = pwgl.selectedSkies[j];
+	 		sky.textures.images[0] = gl.createTexture();
+	 		loadImageForTexture(sky.baseURL+"/Norder3/Allsky.jpg", sky.textures.images[0], j);
+	 	}
+	 	pwgl.loadedTextures.splice(0, pwgl.loadedTextures.length);
+	}else if (mouseDown || !fovInRange() || forceReload){
+//		var toBeLoadedTextures = [];
+		if (mouseDown){
+			updateVisiblePixels(false);
+		    setupBuffers();
+		}
+		for (var k=0; k<pwgl.selectedSkies.length && k<8;k++){
+			
+		    
+			sky = pwgl.selectedSkies[k];
+
+			if (sky.textures.needsRefresh || !fovInRange()){
+				sky.textures.images.splice(0, sky.textures.images.length);
+			}
+			if (!fovInRange()){
+				sky.textures.images.splice(0, sky.textures.images.length);
+				sky.textures.cache.splice(0, sky.textures.cache.length);
+			}
+			for (var n=0; n<pwgl.pixels.length;n++){
+				var texCacheIdx = pwgl.pixelsCache.indexOf(pwgl.pixels[n]);
+				if (texCacheIdx !== -1 ){
+					console.log("FROM CACHE");
+					sky.textures.images[n] = sky.textures.cache[texCacheIdx];
+				}else{
+					console.log("NEW TEXTURE");
+					sky.textures.images[n] = gl.createTexture();
+					dirNumber = Math.floor(pwgl.pixels[n] / 10000) * 10000;
+					loadImageForTexture(sky.baseURL+"/Norder"+this.norder+"/Dir"+dirNumber+"/Npix"+pwgl.pixels[n]+".jpg", sky.textures.images[n], k);
+				}
+			}
+			sky.textures.cache = sky.textures.images.slice();
+			
+			
+			
+			
+//			if (toBeLoadedTextures.length <= 0){
+//				
+//				for (var n=0; n<pwgl.pixels.length;n++){
+//					if (pwgl.loadedTextures.indexOf(pwgl.pixels[n]) == -1 || sky.textures.needsRefresh){
+//						toBeLoadedTextures.push(pwgl.pixels[n]);
+//						pwgl.loadedTextures.push(pwgl.pixels[n]);
+//					}
+//				}
+//			}
+//			if (sky.textures.needsRefresh){
+//				sky.textures.needsRefresh = false;
+//			}
+//			var dirNumber = "0";
+//			var texIdx = sky.textures.images.length;
+//			for (var i=0; i<toBeLoadedTextures.length;i++){
+//				sky.textures.images[texIdx] = gl.createTexture();
+//				dirNumber = Math.floor(toBeLoadedTextures[i] / 10000) * 10000;
+//				loadImageForTexture(sky.baseURL+"/Norder"+this.norder+"/Dir"+dirNumber+"/Npix"+toBeLoadedTextures[i]+".jpg", sky.textures.images[texIdx], k);
+//				texIdx++;
+//			}
+		}
+	}
+}
+
+
+function addTexturesOLD(forceReload){
+	var currMap = currMapURL;
+	
+	if (!fovInRange()){
+//		pwgl.pixels.splice(0, pwgl.pixels.length);
+	}
+	console.log(pwgl.pixels);
+	
 	// fullZoom
 	if (fov >=50){
 	 	if (fovInRange() && !forceReload){
@@ -22,16 +107,15 @@ function addTextures(forceReload){
 	 	pwgl.loadedTextures.splice(0, pwgl.loadedTextures.length);
 	}else if (mouseDown || !fovInRange() || forceReload){
 		var toBeLoadedTextures = [];
-		if (mouseDown){
-			updateVisiblePixels(false);
-		    setupBuffers();
-		}
+//		if (mouseDown){
+//			updateVisiblePixels(false);
+//		    setupBuffers();
+//		}
 		for (var k=0; k<pwgl.selectedSkies.length && k<8;k++){
 			
 		    
 			sky = pwgl.selectedSkies[k];
-			console.log("k: "+k);
-			console.log(sky);
+
 			if (sky.textures.needsRefresh || !fovInRange()){
 				sky.textures.images.splice(0, sky.textures.images.length);
 			}
@@ -64,25 +148,17 @@ function addTextures(forceReload){
 //					}
 //				}
 			}
-//			console.log(pwgl.pixels);
-//			console.log(pwgl.loadedTextures);
-//			console.log(toBeLoadedTextures);
 			if (sky.textures.needsRefresh){
 				sky.textures.needsRefresh = false;
 			}
 			var dirNumber = "0";
 			var texIdx = sky.textures.images.length;
-			console.log(toBeLoadedTextures);
 			for (var i=0; i<toBeLoadedTextures.length;i++){
-//				sky.textures.images[toBeLoadedTextures[i]] = gl.createTexture();
 				sky.textures.images[texIdx] = gl.createTexture();
 				dirNumber = Math.floor(toBeLoadedTextures[i] / 10000) * 10000;
-//				loadImageForTexture(sky.baseURL+"/Norder"+this.norder+"/Dir0/Npix"+toBeLoadedTextures[i]+".jpg", sky.textures.images[toBeLoadedTextures[i]], k);
-//				loadImageForTexture(sky.baseURL+"/Norder"+this.norder+"/Dir"+dirNumber+"/Npix"+toBeLoadedTextures[i]+".jpg", sky.textures.images[toBeLoadedTextures[i]], k);
 				loadImageForTexture(sky.baseURL+"/Norder"+this.norder+"/Dir"+dirNumber+"/Npix"+toBeLoadedTextures[i]+".jpg", sky.textures.images[texIdx], k);
 				texIdx++;
 			}
-//			console.log(sky.textures.images);
 		}
 	}
 }

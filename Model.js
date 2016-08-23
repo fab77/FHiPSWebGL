@@ -23,7 +23,17 @@ var skies = [
 		"shaderIdx": null,
 		"selected":false,
 		"maxOrder": 9
+	},{
+		"name":"Planck 850",
+		"URL":"http://skies.esac.esa.int/pla/HFI_SkyMap_857_2048_R2_02_full_HiPS/",
+		"index":3,
+		"shaderIdx": null,
+		"selected":false,
+		"maxOrder": 3
 	}
+	
+	
+	
 ];
 
 function getSkyDyIdx(idx){
@@ -66,6 +76,7 @@ function SkyTexture(){
 	this.needsRefresh = true;
 	this.opacity = 1.00 * 100.0/100.0;
 	this.images = [];
+	this.cache = [];
 //	this.shaderIndex;
 }
 
