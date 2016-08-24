@@ -20,9 +20,15 @@ function addTextures(forceReload){
 		}	 	
 	 	var sky;
 	 	for (var j=0; j<pwgl.selectedSkies.length && j<8;j++){
+	 		
 	 		sky = pwgl.selectedSkies[j];
-	 		sky.textures.images[0] = gl.createTexture();
-	 		loadImageForTexture(sky.baseURL+"/Norder3/Allsky.jpg", sky.textures.images[0], j);
+	 		if (sky.textures.needsRefresh){
+	 			sky.textures.images[0] = gl.createTexture();
+		 		loadImageForTexture(sky.baseURL+"/Norder3/Allsky.jpg", sky.textures.images[0], j);	
+		 		
+		 		sky.textures.needsRefresh = false;
+	 		}
+	 		
 	 	}
 	 	pwgl.loadedTextures.splice(0, pwgl.loadedTextures.length);
 	}else if (mouseDown || !fovInRange() || forceReload){
@@ -36,20 +42,28 @@ function addTextures(forceReload){
 		    
 			sky = pwgl.selectedSkies[k];
 
-			if (sky.textures.needsRefresh || !fovInRange()){
+			if (sky.textures.needsRefresh){
+				for (var d=0;d<sky.textures.images.length;d++){
+					gl.deleteTexture(sky.textures.images[d]);
+				}
 				sky.textures.images.splice(0, sky.textures.images.length);
+				sky.textures.needsRefresh = false;
 			}
 			if (!fovInRange()){
+				for (var d=0;d<sky.textures.images.length;d++){
+					gl.deleteTexture(sky.textures.images[d]);
+				}
 				sky.textures.images.splice(0, sky.textures.images.length);
 				sky.textures.cache.splice(0, sky.textures.cache.length);
 			}
 			for (var n=0; n<pwgl.pixels.length;n++){
 				var texCacheIdx = pwgl.pixelsCache.indexOf(pwgl.pixels[n]);
 				if (texCacheIdx !== -1 ){
-					console.log("FROM CACHE");
+//					console.log("FROM CACHE");
+					sky.textures.images[n] = gl.createTexture();
 					sky.textures.images[n] = sky.textures.cache[texCacheIdx];
 				}else{
-					console.log("NEW TEXTURE");
+//					console.log("NEW TEXTURE");
 					sky.textures.images[n] = gl.createTexture();
 					dirNumber = Math.floor(pwgl.pixels[n] / 10000) * 10000;
 					loadImageForTexture(sky.baseURL+"/Norder"+this.norder+"/Dir"+dirNumber+"/Npix"+pwgl.pixels[n]+".jpg", sky.textures.images[n], k);
@@ -268,13 +282,15 @@ function textureFinishedLoading(image, texture, texunit){
 		gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
 	}
 	
-	if(texunit == 0){
-		gl.uniform1i(pwgl.uniformSampler0Loc, 0);
-    }else if(texunit == 1){
-    	gl.uniform1i(pwgl.uniformSampler1Loc, 1);
-    }else if(texunit == 2){
-    	gl.uniform1i(pwgl.uniformSampler2Loc, 2);
-    }
+	
+	gl.uniform1i(pwgl.uniformSamplerLoc[texunit], texunit);
+//	if(texunit == 0){
+//		gl.uniform1i(pwgl.uniformSampler0Loc, 0);
+//    }else if(texunit == 1){
+//    	gl.uniform1i(pwgl.uniformSampler1Loc, 1);
+//    }else if(texunit == 2){
+//    	gl.uniform1i(pwgl.uniformSampler2Loc, 2);
+//    }
 	if (!gl.isTexture(texture)){
     	console.log("error in texture");
     }

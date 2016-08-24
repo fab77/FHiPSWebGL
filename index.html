@@ -48,9 +48,20 @@
 	uniform sampler2D uSampler0;
 	uniform sampler2D uSampler1;
 	uniform sampler2D uSampler2;
+	uniform sampler2D uSampler3;
+	uniform sampler2D uSampler4;
+	uniform sampler2D uSampler5;
+	uniform sampler2D uSampler6;
+	uniform sampler2D uSampler7;
 	uniform float uFactor0;
 	uniform float uFactor1;
 	uniform float uFactor2;
+	uniform float uFactor3;
+	uniform float uFactor4;
+	uniform float uFactor5;
+	uniform float uFactor6;
+	uniform float uFactor7;
+
 
   	void main() {
 
@@ -70,6 +81,29 @@
 			vec4 color2 = texture2D(uSampler2, vTextureCoordinates);
 			finalColor = vec3(finalColor.x +  color2.x*uFactor2,finalColor.y +  color2.y*uFactor2,finalColor.z +  color2.z*uFactor2);
 		}
+
+
+if (uFactor3 >= 0.0){
+			vec4 color3 = texture2D(uSampler3, vTextureCoordinates);
+			finalColor = vec3(finalColor.x +  color3.x*uFactor3,finalColor.y +  color3.y*uFactor3,finalColor.z +  color3.z*uFactor3);
+		}
+if (uFactor4 >= 0.0){
+			vec4 color4 = texture2D(uSampler4, vTextureCoordinates);
+			finalColor = vec3(finalColor.x +  color4.x*uFactor4,finalColor.y +  color4.y*uFactor4,finalColor.z +  color4.z*uFactor4);
+		}
+if (uFactor5 >= 0.0){
+			vec4 color5 = texture2D(uSampler5, vTextureCoordinates);
+			finalColor = vec3(finalColor.x +  color5.x*uFactor5,finalColor.y +  color5.y*uFactor5,finalColor.z +  color5.z*uFactor5);
+		}
+if (uFactor6 >= 0.0){
+			vec4 color6 = texture2D(uSampler6, vTextureCoordinates);
+			finalColor = vec3(finalColor.x +  color6.x*uFactor6,finalColor.y +  color6.y*uFactor6,finalColor.z +  color6.z*uFactor6);
+		}
+if (uFactor7 >= 0.0){
+			vec4 color7 = texture2D(uSampler7, vTextureCoordinates);
+			finalColor = vec3(finalColor.x +  color7.x*uFactor7,finalColor.y +  color7.y*uFactor7,finalColor.z +  color7.z*uFactor7);
+		}
+
 		gl_FragColor = vec4(finalColor, 1);		
 
 		

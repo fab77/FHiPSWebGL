@@ -51,7 +51,7 @@ function updateVisiblePixels(clean){
 		
 		var cc = getCoordsCenter();
 		var ccPixNo = getPixNo(cc);
-		console.log("ccPixNo: "+ccPixNo)
+//		console.log("ccPixNo: "+ccPixNo)
 		if (pwgl.pixels.indexOf(ccPixNo) == -1){
 			pwgl.pixels.push(ccPixNo);	
 		}
@@ -91,10 +91,6 @@ function setupBuffers(){
 	for (var i=0; i < nPixels; i++){
 		facesVec3Array = new Array();
 		facesVec3Array = healpix.getBoundaries(pwgl.pixels[i]);
-//if (i>750){
-//	console.log("pix "+pwgl.pixels[i]);
-//	console.log(facesVec3Array);
-//}
 		
 		vertexPosition[12*i] = facesVec3Array[0].x ;
 		vertexPosition[12*i+1] = facesVec3Array[0].y ;

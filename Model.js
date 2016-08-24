@@ -24,9 +24,23 @@ var skies = [
 		"selected":false,
 		"maxOrder": 9
 	},{
+		"name":"XMM-Newton EPIC color",
+		"URL":"http://skies.esac.esa.int/XMM-Newton/EPIC-RGB/",
+		"index":3,
+		"shaderIdx": null,
+		"selected":false,
+		"maxOrder": 7
+	},{
+		"name":"INTEGRAL-IBIS RGB",
+		"URL":"http://skies.esac.esa.int/Integral/color/",
+		"index":4,
+		"shaderIdx": null,
+		"selected":false,
+		"maxOrder": 3
+	},{
 		"name":"Planck 850",
 		"URL":"http://skies.esac.esa.int/pla/HFI_SkyMap_857_2048_R2_02_full_HiPS/",
-		"index":3,
+		"index":5,
 		"shaderIdx": null,
 		"selected":false,
 		"maxOrder": 3

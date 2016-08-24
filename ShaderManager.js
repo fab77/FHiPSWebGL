@@ -21,8 +21,14 @@ function setupShaders() {
 	  pwgl.uniformSampler0Loc = gl.getUniformLocation(shaderProgram, "uSampler0");
 	  pwgl.uniformSampler1Loc = gl.getUniformLocation(shaderProgram, "uSampler1");
 	  pwgl.uniformSampler2Loc = gl.getUniformLocation(shaderProgram, "uSampler2");
+//	  pwgl.uniformSampler3Loc = gl.getUniformLocation(shaderProgram, "uSampler3");
+//	  pwgl.uniformSampler4Loc = gl.getUniformLocation(shaderProgram, "uSampler4");
+//	  pwgl.uniformSampler5Loc = gl.getUniformLocation(shaderProgram, "uSampler5");
+//	  pwgl.uniformSampler6Loc = gl.getUniformLocation(shaderProgram, "uSampler6");
+//	  pwgl.uniformSampler7Loc = gl.getUniformLocation(shaderProgram, "uSampler7");
 	  
-	  for (var i=0; i<4; i++){
+	  for (var i=0; i<8; i++){
+		  pwgl.uniformSamplerLoc[i] = gl.getUniformLocation(shaderProgram, "uSampler"+i);
 		  pwgl.uniformVertexTextureFactorLoc[i] = gl.getUniformLocation(shaderProgram, "uFactor"+i);
 		  if (i == 0){
 			  gl.uniform1f(pwgl.uniformVertexTextureFactorLoc[0], 1.0);

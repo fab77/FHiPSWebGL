@@ -400,7 +400,6 @@ function initSkies(){
 		range.value = "100";
 		range.min = "0";
 		range.max = "100";
-		
 
  		skiesDiv.appendChild(checkbox);
  		skiesDiv.appendChild(label);
@@ -420,8 +419,6 @@ function initSkies(){
 		});
 		pwgl.availableSkies.push(sky);
 	}
-//	console.log(pwgl.availableSkies);
-//	console.log(pwgl.selectedSkies);
 }
 
 function startup() {
@@ -434,16 +431,7 @@ function startup() {
     canvas.style.position = "absolute";
     canvas.style.border   = "1px solid";
 
-    
     initSkies();
-    
-    
-    
-    
-//    var defaultJSONMap = getSkyDyIdx(pwgl.defaultMapId);
-//    var defaultSky = new Sky(defaultJSONMap);
-//    pwgl.selectedSkies.push(defaultSky);
-
     
     div.appendChild(canvas)
     offset = (document.getElementById("myGLCanvas")).getBoundingClientRect();
