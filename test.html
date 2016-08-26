@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+
+
+<title>Insert title here</title>
+</head>
+<body>
+<script type="text/javascript">
+
+
+console.log("[0.4267843741028691,-0.607474930966429,0.6699472414070786]");
+var radecdeg = modelToRaDec([0.4267843741028691,-0.607474930966429,0.6699472414070786]);
+console.log(radecdeg);
+var xyz = raDecToModelXYZ(radecdeg);
+console.log(xyz);
+
+
+function modelToRaDec(xyz){
+	var ra, dec;
+	ra = Math.atan2(xyz[1], xyz[0]);
+	if (ra < 0){
+		ra += 2*Math.PI;
+	}
+	if (ra >= 2*Math.PI){
+		ra -= 2*Math.PI;
+	}
+	dec = Math.atan2(Math.sqrt(xyz[0]*xyz[0] + xyz[1]*xyz[1]), xyz[2]);
+
+	return [ra* 180 / Math.PI, 90 - dec* (180 / Math.PI)];
+}
+
+function raDecToModelXYZ(radecdeg){
+	var xyz = [];
+	radecrad = [(radecdeg[0]) * Math.PI / 180.0, radecdeg[1] * Math.PI / 180.0];
+	
+	xyz[0] = Math.cos(radecrad[1]) * Math.cos(radecrad[0]);
+	xyz[1] = Math.cos(radecrad[1]) * Math.sin(radecrad[0]);
+	xyz[2] = Math.sin(radecrad[1]);
+	return xyz;
+}
+
+</script>
+</body>
+</html>

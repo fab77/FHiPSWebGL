@@ -1,11 +1,12 @@
 /**
  * 
  */
+"use strict";
 function setupShaders() {
 	  var vertexShader = loadShaderFromDOM("shader-vs");
 	  var fragmentShader = loadShaderFromDOM("shader-fs");
 	  
-	  var shaderProgram = gl.createProgram();
+	  shaderProgram = gl.createProgram();
 	  gl.attachShader(shaderProgram, vertexShader);
 	  gl.attachShader(shaderProgram, fragmentShader);
 	  gl.linkProgram(shaderProgram);
@@ -18,14 +19,11 @@ function setupShaders() {
 	  pwgl.vertexTextureAttributeLoc = gl.getAttribLocation(shaderProgram, "aTextureCoordinates");
 	  pwgl.uniformMVMatrixLoc = gl.getUniformLocation(shaderProgram, "uMVMatrix");
 	  pwgl.uniformProjMatrixLoc = gl.getUniformLocation(shaderProgram, "uPMatrix");
-	  pwgl.uniformSampler0Loc = gl.getUniformLocation(shaderProgram, "uSampler0");
-	  pwgl.uniformSampler1Loc = gl.getUniformLocation(shaderProgram, "uSampler1");
-	  pwgl.uniformSampler2Loc = gl.getUniformLocation(shaderProgram, "uSampler2");
-//	  pwgl.uniformSampler3Loc = gl.getUniformLocation(shaderProgram, "uSampler3");
-//	  pwgl.uniformSampler4Loc = gl.getUniformLocation(shaderProgram, "uSampler4");
-//	  pwgl.uniformSampler5Loc = gl.getUniformLocation(shaderProgram, "uSampler5");
-//	  pwgl.uniformSampler6Loc = gl.getUniformLocation(shaderProgram, "uSampler6");
-//	  pwgl.uniformSampler7Loc = gl.getUniformLocation(shaderProgram, "uSampler7");
+	  
+	  pwgl.useTexturesUniformLoc = gl.getUniformLocation(shaderProgram, "aUseTextures");
+	  pwgl.vertexCatPositionAttributeLoc = gl.getAttribLocation(shaderProgram, 'aCatPosition');
+
+
 	  
 	  for (var i=0; i<8; i++){
 		  pwgl.uniformSamplerLoc[i] = gl.getUniformLocation(shaderProgram, "uSampler"+i);
@@ -37,16 +35,9 @@ function setupShaders() {
 		  }
 	  }
 
-//	  pwgl.uniformVertexTextureFactor0Loc = gl.getUniformLocation(shaderProgram, "uFactor0");
-//	  pwgl.uniformVertexTextureFactor1Loc = gl.getUniformLocation(shaderProgram, "uFactor1");
-//	  pwgl.uniformVertexTextureFactor2Loc = gl.getUniformLocation(shaderProgram, "uFactor2");
-//	  
-//	  gl.uniform1f(pwgl.uniformVertexTextureFactor0Loc, 1.0);
-//	  gl.uniform1f(pwgl.uniformVertexTextureFactor1Loc, -99.0);
-//	  gl.uniform1f(pwgl.uniformVertexTextureFactor2Loc, -99.0);
 	  
-	  gl.enableVertexAttribArray(pwgl.vertexPositionAttributeLoc);
-	  gl.enableVertexAttribArray(pwgl.vertexTextureAttributeLoc);
+//	  gl.enableVertexAttribArray(pwgl.vertexPositionAttributeLoc);
+//	  gl.enableVertexAttribArray(pwgl.vertexTextureAttributeLoc);
 
 	  pwgl.modelViewMatrix = mat4.create(); 
 	  pwgl.projectionMatrix = mat4.create();

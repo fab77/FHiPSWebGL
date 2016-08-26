@@ -29,21 +29,36 @@
 <script id="shader-vs" type="x-shader/x-vertex">
 	attribute vec3 aVertexPosition;
 	attribute vec2 aTextureCoordinates;
+	uniform float aUseTextures;
 
+
+	attribute vec4 aCatPosition;
+ 
 	uniform mat4 uMVMatrix;
 	uniform mat4 uPMatrix;
   
+	varying float vUseTextures;
+
   	varying vec2 vTextureCoordinates;
 
 	void main() {
-		gl_Position = uPMatrix * uMVMatrix * vec4(aVertexPosition, 1.0);
-		vTextureCoordinates = aTextureCoordinates;
+		if (aUseTextures == 1.0){
+			gl_Position = uPMatrix * uMVMatrix * vec4(aVertexPosition, 1.0);
+			vTextureCoordinates = aTextureCoordinates;
+			vUseTextures = 1.0;
+		}else{
+			gl_Position = uPMatrix * uMVMatrix * aCatPosition;
+			gl_PointSize = 3.0;
+			vUseTextures = 0.0;
+		}
 	}
 </script>
 
 <script id="shader-fs" type="x-shader/x-fragment">
   	precision mediump float;
   
+	varying float vUseTextures;
+
 	varying vec2 vTextureCoordinates;
 	uniform sampler2D uSampler0;
 	uniform sampler2D uSampler1;
@@ -64,106 +79,55 @@
 
 
   	void main() {
-
-		vec3 finalColor;
-
-		if (uFactor0 >= 0.0){
-			vec4 color0 = texture2D(uSampler0, vTextureCoordinates);
-			finalColor = vec3(finalColor.x +  color0.x *uFactor0 ,finalColor.y +  color0.y*uFactor0,finalColor.z +  color0.z*uFactor0); 
+		if (vUseTextures == 1.0){
+			vec3 finalColor;
+			if (uFactor0 >= 0.0){
+				vec4 color0 = texture2D(uSampler0, vTextureCoordinates);
+				finalColor = vec3(finalColor.x +  color0.x *uFactor0 ,finalColor.y +  color0.y*uFactor0,finalColor.z +  color0.z*uFactor0); 
+			}
+			if (uFactor1 >= 0.0){
+				vec4 color1 = texture2D(uSampler1, vTextureCoordinates);
+				finalColor = vec3(finalColor.x +  color1.x*uFactor1,finalColor.y +  color1.y*uFactor1,finalColor.z +  color1.z*uFactor1);
+			}
+			if (uFactor2 >= 0.0){
+				vec4 color2 = texture2D(uSampler2, vTextureCoordinates);
+				finalColor = vec3(finalColor.x +  color2.x*uFactor2,finalColor.y +  color2.y*uFactor2,finalColor.z +  color2.z*uFactor2);
+			}
+			if (uFactor3 >= 0.0){
+				vec4 color3 = texture2D(uSampler3, vTextureCoordinates);
+				finalColor = vec3(finalColor.x +  color3.x*uFactor3,finalColor.y +  color3.y*uFactor3,finalColor.z +  color3.z*uFactor3);
+			}
+			if (uFactor4 >= 0.0){
+				vec4 color4 = texture2D(uSampler4, vTextureCoordinates);
+				finalColor = vec3(finalColor.x +  color4.x*uFactor4,finalColor.y +  color4.y*uFactor4,finalColor.z +  color4.z*uFactor4);
+			}
+			if (uFactor5 >= 0.0){
+				vec4 color5 = texture2D(uSampler5, vTextureCoordinates);
+				finalColor = vec3(finalColor.x +  color5.x*uFactor5,finalColor.y +  color5.y*uFactor5,finalColor.z +  color5.z*uFactor5);
+			}
+			if (uFactor6 >= 0.0){
+				vec4 color6 = texture2D(uSampler6, vTextureCoordinates);
+				finalColor = vec3(finalColor.x +  color6.x*uFactor6,finalColor.y +  color6.y*uFactor6,finalColor.z +  color6.z*uFactor6);
+			}
+			if (uFactor7 >= 0.0){
+				vec4 color7 = texture2D(uSampler7, vTextureCoordinates);
+				finalColor = vec3(finalColor.x +  color7.x*uFactor7,finalColor.y +  color7.y*uFactor7,finalColor.z +  color7.z*uFactor7);
+			}
+			gl_FragColor = vec4(finalColor, 1);		
+		}else{
+			gl_FragColor = vec4(0.0, 1.0, 0.0, 1.0);
 		}
-		 
-		if (uFactor1 >= 0.0){
-			vec4 color1 = texture2D(uSampler1, vTextureCoordinates);
-			finalColor = vec3(finalColor.x +  color1.x*uFactor1,finalColor.y +  color1.y*uFactor1,finalColor.z +  color1.z*uFactor1);
-		}
-
-		if (uFactor2 >= 0.0){
-			vec4 color2 = texture2D(uSampler2, vTextureCoordinates);
-			finalColor = vec3(finalColor.x +  color2.x*uFactor2,finalColor.y +  color2.y*uFactor2,finalColor.z +  color2.z*uFactor2);
-		}
-
-
-if (uFactor3 >= 0.0){
-			vec4 color3 = texture2D(uSampler3, vTextureCoordinates);
-			finalColor = vec3(finalColor.x +  color3.x*uFactor3,finalColor.y +  color3.y*uFactor3,finalColor.z +  color3.z*uFactor3);
-		}
-if (uFactor4 >= 0.0){
-			vec4 color4 = texture2D(uSampler4, vTextureCoordinates);
-			finalColor = vec3(finalColor.x +  color4.x*uFactor4,finalColor.y +  color4.y*uFactor4,finalColor.z +  color4.z*uFactor4);
-		}
-if (uFactor5 >= 0.0){
-			vec4 color5 = texture2D(uSampler5, vTextureCoordinates);
-			finalColor = vec3(finalColor.x +  color5.x*uFactor5,finalColor.y +  color5.y*uFactor5,finalColor.z +  color5.z*uFactor5);
-		}
-if (uFactor6 >= 0.0){
-			vec4 color6 = texture2D(uSampler6, vTextureCoordinates);
-			finalColor = vec3(finalColor.x +  color6.x*uFactor6,finalColor.y +  color6.y*uFactor6,finalColor.z +  color6.z*uFactor6);
-		}
-if (uFactor7 >= 0.0){
-			vec4 color7 = texture2D(uSampler7, vTextureCoordinates);
-			finalColor = vec3(finalColor.x +  color7.x*uFactor7,finalColor.y +  color7.y*uFactor7,finalColor.z +  color7.z*uFactor7);
-		}
-
-		gl_FragColor = vec4(finalColor, 1);		
-
-		
-		//gl_FragColor = mix(color0, color1, 0.5);
-		//gl_FragColor = mix(vec4(finalColor0, 1), vec4(finalColor1, 1), 0.5);
-		//gl_FragColor = color0 * 1.0 * tex0Active + color1 * 1.0 * tex1Active;
-		
   	} 
 </script>
 
 
 
-<body >
+<body style="background-color: gray;">
+
 <!-- <body onload="startup();"> -->
 
 <script type="text/javascript">
 window.onload = function(){
-// 	var skiesDiv = document.getElementById("skies");
-// 	for (var i=0; i<skies.length; i++){
-// 		var checkbox = document.createElement('input');
-// 		checkbox.type = "checkbox";
-// 		checkbox.name = "hips";
-// 		checkbox.value = skies[i].index;
-// 		checkbox.id = "hips"+skies[i].index;
-// 		if (skies[i].index == pwgl.defaultMapId){
-// 			checkbox.checked = true;
-// 		}
-		
-// 		var label = document.createElement('label')
-// 		label.htmlFor = checkbox.id;
-// 		label.appendChild(document.createTextNode(skies[i].name));
-
-		
-// 		var range = document.createElement('input');
-// 		range.type = "range";
-// 		range.name = "transparency";
-// 		range.id = skies[i].index;
-// 		range.value = "100";
-// 		range.min = "0";
-// 		range.max = "100";
-		
-// 		skiesDiv.appendChild(checkbox);
-// 		skiesDiv.appendChild(label);
-// 		skiesDiv.appendChild(range);
-
-// 		skiesDiv.appendChild(document.createElement("br"));
-
-// 		document.getElementById(checkbox.id).addEventListener("click", function(){
-// 			if (this.checked){
-// 				addSky(this.value);
-// 			}else{
-// 				removeSky(this.value);
-// 			}
-// 		});
-		
-// 		document.getElementById(range.id).addEventListener("change", function(){
-// 			changeSkyTransparency(this.id, this.value);
-// 		});
-// 	}
-
 	startup();
 }
 </script>
@@ -179,8 +143,12 @@ window.onload = function(){
 	  	<div id="fov">
 	  		fov: --
 	  	</div>
-	  	
+	  	<hr/>
+	  	<div style="text-align:center;">Skies</div>
 	  	<div id="skies"></div>
+	  	<hr/>
+	  	<div style="text-align:center;">Catalogues</div>
+	  	<div id="catalogues"></div>
   	</div>
   	
 </body>

@@ -1,6 +1,8 @@
 /**
  * Author: Fabrizio Giordano
  */
+
+"use strict";
 var norder = 3;
 var nside = Math.pow(2, norder);
 var healpix = new Healpix(nside);
@@ -10,7 +12,8 @@ var mouseDown = false;
 var lastMouseX, lastMouseY;
 var zoom = 1;
 var fovDiv = document.getElementById('fov');
-var oldFov = fov = 180/zoom;
+var fov = 180/zoom;
+var oldFov = fov;
 var canvasWidth = 600;
 var canvasHeight = 600;
 //var oldFov;
@@ -24,7 +27,9 @@ console.log("maxNPix: "+maxNPix);
 var gl;
 var canvas;
  
+var shaderProgram;
 var pwgl = {
+		"catalogues": [],
 		"pixels": [],
 		"pixelsCache": [],
 		"selectedSkies": [],
@@ -42,14 +47,23 @@ var pwgl = {
 		"vertexPositionBuffer" : "",
 		"vertexTextureCoordinateBuffer" : "",
 		"vertexIndexBuffer" : "",
+		
+		"vertexCataloguePositionBuffer" : "",
+		"vertexCatalogueIndexBuffer" : "",
+		
 		"VERTEX_POS_BUF_ITEM_SIZE" : 3,
 		"VERTEX_POS_BUF_NUM_ITEMS" : 0,
+		
+		"VERTEX_POS_CAT_BUF_ITEM_SIZE" : 3,
+		"VERTEX_POS_CAT_BUF_NUM_ITEMS" : 0,
+		
 		"VERTEX_TEX_COORD_BUF_ITEM_SIZE" : 2,
 		"VERTEX_TEX_COORD_BUF_NUM_ITEMS" : 0,
 		"VERTEX_INDEX_BUF_ITEM_SIZE" : 1,
 		"VERTEX_INDEX_BUF_NUM_ITEMS" : 0,
 		"vertexTextureAttributeLoc" : "",
 		"vertexPositionAttributeLoc" : "",
+		"vertexCatPositionAttributeLoc" : "",
 		"uniformMVMatrixLoc": "",
 		"uniformProjMatrixLoc": "",
 		"uniformSamplerLoc": [],
@@ -100,7 +114,7 @@ function getPixNo(xyz){
 //	console.log(p);
 //	console.log(this.healpix);
 	
-	var pixNo = this.healpix.ang2pix(p);
+	var pixNo = healpix.ang2pix(p);
 	return pixNo;
 }
 
@@ -168,41 +182,35 @@ function refreshHealpix(){
 	console.log("refreshing Healpix");
 //	console.log("refreshing Healpix [nside]"+this.nside);
 	if (fov >= 16){
-		this.norder = 3;
-		this.nside = Math.pow(2, norder);
-		this.healpix = new Healpix(nside);
-		this.maxNPix = healpix.getNPix();
+		norder = 3;
+		nside = Math.pow(2, norder);
+		healpix = new Healpix(nside);
+		maxNPix = healpix.getNPix();
 	}else if (fov < 2){
-		this.norder = 7;
-		this.nside = Math.pow(2, norder);
-		this.healpix = new Healpix(nside);
-		this.maxNPix = healpix.getNPix();
+		norder = 7;
+		nside = Math.pow(2, norder);
+		healpix = new Healpix(nside);
+		maxNPix = healpix.getNPix();
 	}else if (fov < 4){
-		this.norder = 6;
-		this.nside = Math.pow(2, norder);
-		this.healpix = new Healpix(nside);
-		this.maxNPix = healpix.getNPix();
+		norder = 6;
+		nside = Math.pow(2, norder);
+		healpix = new Healpix(nside);
+		maxNPix = healpix.getNPix();
 	}else if (fov < 8){
-		this.norder = 5;
-		this.nside = Math.pow(2, this.norder);
-		this.healpix = new Healpix(this.nside);
-		this.maxNPix = healpix.getNPix();
+		norder = 5;
+		nside = Math.pow(2, norder);
+		healpix = new Healpix(nside);
+		maxNPix = healpix.getNPix();
 	}else if (fov < 16){
-		this.norder = 4;
-		this.nside = Math.pow(2, norder);
-		this.healpix = new Healpix(nside);
-		this.maxNPix = healpix.getNPix();
+		norder = 4;
+		nside = Math.pow(2, norder);
+		healpix = new Healpix(nside);
+		maxNPix = healpix.getNPix();
 	}
 //	console.log("refreshing Healpix [nside]"+this.nside);
 	for (var k=0; k<pwgl.selectedSkies.length && k<8;k++){
 		pwgl.selectedSkies[k].textures.needsRefresh = true;
 	}
-	
-//	pwgl.loadedTextures.splice(0, pwgl.loadedTextures.length);
-//	pixels.splice(0, pixels.length);
-//	console.log("norder: "+this.norder);
-//	console.log("maxNPix: "+this.maxNPix);
-	
 }
 
 
@@ -222,7 +230,6 @@ function onMouseWheel(ev){
 	}
 	oldFov = fov;
 	fov = 180/zoom;
-//	console.log("oldFov: "+oldFov+" fov: "+fov);
 	fovDiv.innerHTML = "fov: "+fov+"<sup>&#8728;</sup>";
 	if (!fovInRange()){
 		console.log("redraw");
@@ -232,19 +239,10 @@ function onMouseWheel(ev){
 		setupTextures();
 		oldFov = fov;
 	}
-//	else if (mouseDown){
-//		addTextures();
-//    }
 }
 
 function handleMouseDown(event) {
-//	console.log("center coords:"+getCoordsCenter());
-	
     mouseDown = true;
-//    if (mouseDown){
-//		updateVisiblePixels(false);
-//	    setupBuffers();
-//	}
     lastMouseX = event.clientX;
     lastMouseY = event.clientY;
     var rxyz = convertXY2World(event.clientX, event.clientY);
@@ -259,7 +257,10 @@ function handleMouseUp(event) {
 
 function onWindowResized(ev){
 	console.log("Window resize");
+	canvas.width = canvas.height = Math.min(window.innerWidth, window.innerHeight);
+	createGLContext(canvas)
 	offset = (document.getElementById("myGLCanvas")).getBoundingClientRect();
+	
 	console.log(offset);
 }
 
@@ -281,7 +282,14 @@ function modelToRaDec(xyz){
 	return [ra* 180 / Math.PI, 90 - dec* (180 / Math.PI)];
 }
 
-
+function raDecToModelXYZ(radecdeg){
+	var xyz = [];
+	var radecrad = [(radecdeg[0]) * Math.PI / 180.0, radecdeg[1] * Math.PI / 180.0];
+	xyz[0] = Math.cos(radecrad[1]) * Math.cos(radecrad[0]);
+	xyz[1] = Math.cos(radecrad[1]) * Math.sin(radecrad[0]);
+	xyz[2] = Math.sin(radecrad[1]);
+	return xyz;
+}
 
 
 function handleMouseMove(ev){
@@ -298,7 +306,7 @@ function handleMouseMove(ev){
 function convertXY2World(x,y){
 	var vx = x; // x coordinate of a mouse pointer
     var vy = y; // y coordinate of a mouse pointer
-    vxy = [vx, vy];
+    var vxy = [vx, vy];
     
     var xy = viewToWorld(vxy[0], vxy[1]);
     xy[0] = xy[0] * 1/zoom;
@@ -315,7 +323,7 @@ function convertXY2World(x,y){
 function rotateViewXY(x,y){
 	var vx = x; // x coordinate of a mouse pointer
     var vy = y; // y coordinate of a mouse pointer
-    vxy = [vx, vy];
+    var vxy = [vx, vy];
     
     var xy = viewToWorld(vxy[0], vxy[1]);
     xy[0] = xy[0] * 1/zoom;
@@ -371,6 +379,40 @@ function convertRa2HMS(ra){
 	return [h,m,s];
 }
 
+function initCatalogues(){
+	var catDiv = document.getElementById("catalogues");
+	var catalogue = new Catalogue("XMM Slew");
+	for (var i=0; i<sources.length; i++){
+		var sourceJSON = new Source(sources[i]);
+		catalogue.addSource(sourceJSON);
+	}
+	pwgl.catalogues.push(catalogue);
+	
+	var checkbox = document.createElement('input');
+	checkbox.type = "checkbox";
+	checkbox.name = "cat";
+	checkbox.value = 0;
+	checkbox.id = "cat"+0;
+	checkbox.checked = false;
+	
+	var label = document.createElement('label')
+	label.htmlFor = checkbox.id;
+	label.appendChild(document.createTextNode(catalogue.name));
+	
+	catDiv.appendChild(checkbox);
+	catDiv.appendChild(label);
+	
+	document.getElementById(checkbox.id).addEventListener("click", function(){
+		if (this.checked){
+			enableCatalogue = true;
+		}else{
+			enableCatalogue = false;
+		}
+	});
+}
+
+var enableCatalogue = false;
+
 function initSkies(){
 	var curJSONSky;
 	var skiesDiv = document.getElementById("skies");
@@ -414,7 +456,7 @@ function initSkies(){
 			}
 		});
 		
-		document.getElementById(range.id).addEventListener("change", function(){
+		document.getElementById(range.id).addEventListener("input", function(){
 			changeSkyTransparency(this.id, this.value);
 		});
 		pwgl.availableSkies.push(sky);
@@ -423,17 +465,20 @@ function initSkies(){
 
 function startup() {
 	canvas = document.createElement('canvas');
-	div = document.getElementById("container");
+	var container = document.getElementById("container");
     canvas.id     = "myGLCanvas";
-    canvas.width  = canvasWidth;
-    canvas.height = canvasHeight;
+
+    canvas.width = canvas.height = Math.min(window.innerWidth, window.innerHeight);
+    
     canvas.style.zIndex   = 8;
     canvas.style.position = "absolute";
     canvas.style.border   = "1px solid";
 
-    initSkies();
     
-    div.appendChild(canvas)
+    initSkies();
+    initCatalogues();
+    
+    container.appendChild(canvas)
     offset = (document.getElementById("myGLCanvas")).getBoundingClientRect();
 
 	canvas.addEventListener('webglcontextlost', handleContextLost, false);
@@ -453,7 +498,7 @@ function startup() {
     fovDiv = document.getElementById('fov');
     fovDiv.innerHTML = "fov: "+fov+"<sup>&#8728;</sup>";
 
-	var container = document.getElementById("container");
+//	var container = document.getElementById("container");
 	container.addEventListener( 'mousewheel', onMouseWheel, false );
 	container.addEventListener( 'DOMMouseScroll', onMouseWheel, false);
 	window.addEventListener( 'resize', onWindowResized, false );

@@ -1,35 +1,36 @@
 /**
  * 
  */
-function updateVisiblePixelsOLD(clean){
-	if (clean){
-		pwgl.pixels.splice(0, pwgl.pixels.length);
-	}
-	if (fov >= 50){
-		for (var i=0; i<768;i++){
-			pwgl.pixels.push(i);
-		}
-	}else{
-		var cc = getCoordsCenter();
-		var ccPixNo = getPixNo(cc);
-		if (pwgl.pixels.indexOf(ccPixNo) == -1){
-			pwgl.pixels.push(ccPixNo);	
-		}
-		var neighbours = this.healpix.neighbours(ccPixNo);
-		for(var n=0; n<neighbours.length; n++){
-			if (pwgl.pixels.indexOf(neighbours[n]) == -1 && neighbours[n] !== -1){
-				pwgl.pixels.push(neighbours[n]);
-			}
-			var currNeighbours = this.healpix.neighbours(neighbours[n]);
-			for(var z=0; z<currNeighbours.length;z++){
-				if (pwgl.pixels.indexOf(currNeighbours[z]) == -1  && currNeighbours[z] !== -1){
-					pwgl.pixels.push(currNeighbours[z]);
-				}	
-			}
-		}
-	}
-	console.log("pixels.length "+pwgl.pixels.length);
-}
+"use strict";
+//function updateVisiblePixelsOLD(clean){
+//	if (clean){
+//		pwgl.pixels.splice(0, pwgl.pixels.length);
+//	}
+//	if (fov >= 50){
+//		for (var i=0; i<768;i++){
+//			pwgl.pixels.push(i);
+//		}
+//	}else{
+//		var cc = getCoordsCenter();
+//		var ccPixNo = getPixNo(cc);
+//		if (pwgl.pixels.indexOf(ccPixNo) == -1){
+//			pwgl.pixels.push(ccPixNo);	
+//		}
+//		var neighbours = this.healpix.neighbours(ccPixNo);
+//		for(var n=0; n<neighbours.length; n++){
+//			if (pwgl.pixels.indexOf(neighbours[n]) == -1 && neighbours[n] !== -1){
+//				pwgl.pixels.push(neighbours[n]);
+//			}
+//			var currNeighbours = this.healpix.neighbours(neighbours[n]);
+//			for(var z=0; z<currNeighbours.length;z++){
+//				if (pwgl.pixels.indexOf(currNeighbours[z]) == -1  && currNeighbours[z] !== -1){
+//					pwgl.pixels.push(currNeighbours[z]);
+//				}	
+//			}
+//		}
+//	}
+//	console.log("pixels.length "+pwgl.pixels.length);
+//}
 
 
 function updateVisiblePixels(clean){
@@ -75,10 +76,38 @@ function updateVisiblePixels(clean){
 	}
 }
 
-
-
 function setupBuffers(){
+	setupSkiesBuffers();
+	setupCataloguesBuffers();
 	
+}
+
+function setupCataloguesBuffers(){
+	console.log("[setupCataloguesBuffers]");
+	
+	for (var i=0; i<pwgl.catalogues.length;i++){
+		pwgl.vertexCataloguePositionBuffer = gl.createBuffer();
+		gl.bindBuffer(gl.ARRAY_BUFFER, pwgl.vertexCataloguePositionBuffer);
+		var catalogue = pwgl.catalogues[i];
+		var nSources = catalogue.sources.length;
+		var vertexCataloguePosition = new Float32Array(nSources*3);
+		var positionIndex = 0;
+		var epsilon = 0.00000001;
+		for(var j=0; j<nSources;j++){
+			vertexCataloguePosition[positionIndex] = catalogue.sources[j].x + epsilon;
+			vertexCataloguePosition[positionIndex+1] = catalogue.sources[j].y + epsilon;
+			vertexCataloguePosition[positionIndex+2] = catalogue.sources[j].z + epsilon;
+			positionIndex +=3;
+		}
+		gl.bufferData(gl.ARRAY_BUFFER, vertexCataloguePosition, gl.STATIC_DRAW);
+		pwgl.VERTEX_POS_CAT_BUF_ITEM_SIZE = 3;
+		pwgl.VERTEX_POS_CAT_BUF_NUM_ITEMS = vertexCataloguePosition.length/3; 
+		
+	}	
+}
+
+function setupSkiesBuffers(){
+	console.log("[setupSkiesBuffers]");
 	pwgl.vertexPositionBuffer = gl.createBuffer();
 	gl.bindBuffer(gl.ARRAY_BUFFER, pwgl.vertexPositionBuffer);
 	var nPixels = pwgl.pixels.length;
@@ -230,16 +259,6 @@ function setupBuffers(){
     gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, vertexIndices, gl.STATIC_DRAW);
     pwgl.VERTEX_INDEX_BUF_ITEM_SIZE = 1;
     pwgl.VERTEX_INDEX_BUF_NUM_ITEMS = vertexIndices.length;
-
-	
-//    console.log(textureCoordinates);
-//    console.log(vertexPosition);
-//    console.log(vertexIndices);
-    
-	
-//    console.log(textureCoordinates.length);
-//	console.log(vertexPosition.length);
-//	console.log(vertexIndices.length);
 	
 }
 

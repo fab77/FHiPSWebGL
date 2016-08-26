@@ -1,7 +1,9 @@
 /**
  * 
  */
+"use strict";
 function handleContextLost(event){
+	console.log("[handleContextLost]");
 	event.preventDefault();
 	cancelRequestAnimFrame(pwgl.requestId);
 	
@@ -19,6 +21,7 @@ function handleContextLost(event){
 }
 
 function handleContextRestored(event){
+	console.log("[handleContextRestored]");
 	setupShaders(); 
 	setupBuffers();
 	setupTextures();
@@ -29,12 +32,12 @@ function handleContextRestored(event){
 
 function draw(){
 	var xyz = getCoordsCenter();
-	currentcc = modelToRaDec(xyz);
+	var currentcc = modelToRaDec(xyz);
 	if (mouseDown && fovInRange()){
 		addTextures();
     }
 	
-	pwgl.requestId = requestAnimationFrame(draw);
+	
 	
 	gl.viewport(0, 0, gl.viewportWidth, gl.viewportHeight);
 	gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
@@ -48,11 +51,44 @@ function draw(){
 	
 	uploadModelViewMatrixToShader();
 	uploadProjectionMatrixToShader();
-    
-    gl.bindBuffer(gl.ARRAY_BUFFER, pwgl.vertexPositionBuffer);
+	
+	
+	if (enableCatalogue){
+		gl.uniform1f(pwgl.useTexturesUniformLoc, 0.0);
+		drawCatalogues();	
+	}
+	
+	gl.uniform1f(pwgl.useTexturesUniformLoc, 1.0);
+	drawSkies();
+	
+	
+	pwgl.requestId = requestAnimationFrame(draw);
+}
+
+
+function drawCatalogues(){
+	while (skyWorking){
+		console.log("sky is working");
+	}
+	gl.uniform1f(pwgl.useTexturesUniformLoc, 0.0);
+
+	gl.bindBuffer(gl.ARRAY_BUFFER, pwgl.vertexCataloguePositionBuffer);
+//	gl.bufferData(gl.ARRAY_BUFFER, vertices, gl.STATIC_DRAW);
+	gl.vertexAttribPointer(pwgl.vertexCatPositionAttributeLoc, 
+			pwgl.VERTEX_POS_CAT_BUF_ITEM_SIZE, 
+			gl.FLOAT, false, 0, 0);
+	gl.enableVertexAttribArray(pwgl.vertexCatPositionAttributeLoc);
+	gl.drawArrays(gl.POINTS, 0, pwgl.VERTEX_POS_CAT_BUF_NUM_ITEMS);
+//console.log(pwgl.VERTEX_POS_CAT_BUF_NUM_ITEMS);
+}
+
+function drawSkies(){
+	skyWorking = true;
+	gl.uniform1f(pwgl.useTexturesUniformLoc, 1.0);
+	gl.bindBuffer(gl.ARRAY_BUFFER, pwgl.vertexPositionBuffer);
     gl.vertexAttribPointer(pwgl.vertexPositionAttributeLoc,
-    					pwgl.VERTEX_POS_BUF_ITEM_SIZE, 
-                       	gl.FLOAT, false, 0, 0);
+			pwgl.VERTEX_POS_BUF_ITEM_SIZE, 
+           	gl.FLOAT, false, 0, 0);
     
     
     gl.bindBuffer(gl.ARRAY_BUFFER, pwgl.vertexTextureCoordinateBuffer);
@@ -62,10 +98,11 @@ function draw(){
     
     gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, pwgl.vertexIndexBuffer);
     
+    gl.enableVertexAttribArray(pwgl.vertexPositionAttributeLoc);
+    gl.enableVertexAttribArray(pwgl.vertexTextureAttributeLoc);
     
     var sky;
     if (fov>=50){
-    	
     	
 	 	for (var j=0; j<pwgl.selectedSkies.length && j<8;j++){
 	 		sky = pwgl.selectedSkies[j];
@@ -105,7 +142,9 @@ function draw(){
 //            gl.UNSIGNED_SHORT, 24*i);
 		}
     }
+    skyWorking = false;
 }
+
 
 function uploadModelViewMatrixToShader() {
 	gl.uniformMatrix4fv(pwgl.uniformMVMatrixLoc, false, pwgl.modelViewMatrix);
