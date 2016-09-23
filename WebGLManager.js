@@ -53,37 +53,41 @@ function draw(){
 	uploadProjectionMatrixToShader();
 	
 	
-	if (enableCatalogue){
-		gl.uniform1f(pwgl.useTexturesUniformLoc, 0.0);
-		drawCatalogues();	
-	}
+	
 	
 	gl.uniform1f(pwgl.useTexturesUniformLoc, 1.0);
 	drawSkies();
-	
-	
+//	window.setTimeout(drawCatalogues,1000);
+	if (enableCatalogue){
+		setupShaders2();
+		uploadModelViewMatrixToShader2();
+		uploadProjectionMatrixToShader2();
+//		gl.uniform1f(pwgl.useTexturesUniformLoc, 0.0);
+		drawCatalogues();	
+	}
+	setupShaders();
 	pwgl.requestId = requestAnimationFrame(draw);
 }
 
 
 function drawCatalogues(){
-	while (skyWorking){
-		console.log("sky is working");
-	}
-	gl.uniform1f(pwgl.useTexturesUniformLoc, 0.0);
+//	if (enableCatalogue){
+//		gl.uniform1f(pwgl.useTexturesUniformLoc, 0.0);
 
-	gl.bindBuffer(gl.ARRAY_BUFFER, pwgl.vertexCataloguePositionBuffer);
-//	gl.bufferData(gl.ARRAY_BUFFER, vertices, gl.STATIC_DRAW);
-	gl.vertexAttribPointer(pwgl.vertexCatPositionAttributeLoc, 
-			pwgl.VERTEX_POS_CAT_BUF_ITEM_SIZE, 
-			gl.FLOAT, false, 0, 0);
-	gl.enableVertexAttribArray(pwgl.vertexCatPositionAttributeLoc);
-	gl.drawArrays(gl.POINTS, 0, pwgl.VERTEX_POS_CAT_BUF_NUM_ITEMS);
-//console.log(pwgl.VERTEX_POS_CAT_BUF_NUM_ITEMS);
+		gl.bindBuffer(gl.ARRAY_BUFFER, pwgl.vertexCataloguePositionBuffer);
+//		gl.bufferData(gl.ARRAY_BUFFER, vertices, gl.STATIC_DRAW);
+		gl.vertexAttribPointer(pwgl.vertexCatPositionAttributeLoc, 
+				pwgl.VERTEX_POS_CAT_BUF_ITEM_SIZE, 
+				gl.FLOAT, false, 0, 0);
+		gl.enableVertexAttribArray(pwgl.vertexCatPositionAttributeLoc);
+		gl.drawArrays(gl.POINTS, 0, pwgl.VERTEX_POS_CAT_BUF_NUM_ITEMS);
+	//console.log(pwgl.VERTEX_POS_CAT_BUF_NUM_ITEMS);		
+//	}
+
 }
 
 function drawSkies(){
-	skyWorking = true;
+	
 	gl.uniform1f(pwgl.useTexturesUniformLoc, 1.0);
 	gl.bindBuffer(gl.ARRAY_BUFFER, pwgl.vertexPositionBuffer);
     gl.vertexAttribPointer(pwgl.vertexPositionAttributeLoc,
@@ -142,7 +146,6 @@ function drawSkies(){
 //            gl.UNSIGNED_SHORT, 24*i);
 		}
     }
-    skyWorking = false;
 }
 
 
@@ -152,6 +155,14 @@ function uploadModelViewMatrixToShader() {
 
 function uploadProjectionMatrixToShader() {
 	gl.uniformMatrix4fv(pwgl.uniformProjMatrixLoc, false, pwgl.projectionMatrix);
+}
+
+function uploadModelViewMatrixToShader2() {
+	gl.uniformMatrix4fv(pwgl.catUniformMVMatrixLoc, false, pwgl.modelViewMatrix);
+}
+
+function uploadProjectionMatrixToShader2() {
+	gl.uniformMatrix4fv(pwgl.catUniformProjMatrixLoc, false, pwgl.projectionMatrix);
 }
 
 function initWebGL(canvas) {

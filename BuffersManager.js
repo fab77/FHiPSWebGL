@@ -34,6 +34,7 @@
 
 
 function updateVisiblePixels(clean){
+	console.log("[updateVisiblePixels]");
 	if (clean){
 		pwgl.pixels.splice(0, pwgl.pixels.length);
 		pwgl.pixelsCache.splice(0, pwgl.pixelsCache.length);
@@ -92,7 +93,8 @@ function setupCataloguesBuffers(){
 		var nSources = catalogue.sources.length;
 		var vertexCataloguePosition = new Float32Array(nSources*3);
 		var positionIndex = 0;
-		var epsilon = 0.00000001;
+//		var epsilon = 0.00000001;
+		var epsilon = 0.0;
 		for(var j=0; j<nSources;j++){
 			vertexCataloguePosition[positionIndex] = catalogue.sources[j].x + epsilon;
 			vertexCataloguePosition[positionIndex+1] = catalogue.sources[j].y + epsilon;

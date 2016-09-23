@@ -26,6 +26,30 @@
 <script src="BuffersManager.js"></script>
 <script src="TextureManager.js"></script>
 <script src="Model.js"></script>
+
+
+
+<script id="shader-vs-cat" type="x-shader/x-vertex">
+
+	attribute vec4 aCatPosition;
+ 
+	uniform mat4 uMVMatrix;
+	uniform mat4 uPMatrix;
+
+	void main() {
+		gl_Position = uPMatrix * uMVMatrix * aCatPosition;
+		gl_PointSize = 3.0;
+	}
+</script>
+<script id="shader-fs-cat" type="x-shader/x-fragment">
+  	precision mediump float;
+  
+  	void main() {
+		gl_FragColor = vec4(0.0, 1.0, 0.0, 1.0);
+  	} 
+</script>
+
+
 <script id="shader-vs" type="x-shader/x-vertex">
 	attribute vec3 aVertexPosition;
 	attribute vec2 aTextureCoordinates;

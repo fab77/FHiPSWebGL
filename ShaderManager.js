@@ -2,6 +2,33 @@
  * 
  */
 "use strict";
+
+function setupShaders2() {
+	  var vertexShader = loadShaderFromDOM("shader-vs-cat");
+	  var fragmentShader = loadShaderFromDOM("shader-fs-cat");
+	  
+	  shaderProgram = gl.createProgram();
+	  gl.attachShader(shaderProgram, vertexShader);
+	  gl.attachShader(shaderProgram, fragmentShader);
+	  gl.linkProgram(shaderProgram);
+
+	  if (!gl.getProgramParameter(shaderProgram, gl.LINK_STATUS) && !gl.isContextLost()) {
+	    alert("Failed to setup shaders");
+	  }
+	  gl.useProgram(shaderProgram);
+	  pwgl.catUniformMVMatrixLoc = gl.getUniformLocation(shaderProgram, "uMVMatrix");
+	  pwgl.catUniformProjMatrixLoc = gl.getUniformLocation(shaderProgram, "uPMatrix");
+	  
+	  pwgl.vertexCatPositionAttributeLoc = gl.getAttribLocation(shaderProgram, 'aCatPosition');
+	  
+//	  gl.enableVertexAttribArray(pwgl.vertexPositionAttributeLoc);
+//	  gl.enableVertexAttribArray(pwgl.vertexTextureAttributeLoc);
+
+//	  pwgl.modelViewMatrix = mat4.create(); 
+//	  pwgl.projectionMatrix = mat4.create();
+//	  pwgl.modelViewMatrixStack = [];
+}
+
 function setupShaders() {
 	  var vertexShader = loadShaderFromDOM("shader-vs");
 	  var fragmentShader = loadShaderFromDOM("shader-fs");
@@ -21,7 +48,7 @@ function setupShaders() {
 	  pwgl.uniformProjMatrixLoc = gl.getUniformLocation(shaderProgram, "uPMatrix");
 	  
 	  pwgl.useTexturesUniformLoc = gl.getUniformLocation(shaderProgram, "aUseTextures");
-	  pwgl.vertexCatPositionAttributeLoc = gl.getAttribLocation(shaderProgram, 'aCatPosition');
+//	  pwgl.vertexCatPositionAttributeLoc = gl.getAttribLocation(shaderProgram, 'aCatPosition');
 
 
 	  
@@ -39,9 +66,9 @@ function setupShaders() {
 //	  gl.enableVertexAttribArray(pwgl.vertexPositionAttributeLoc);
 //	  gl.enableVertexAttribArray(pwgl.vertexTextureAttributeLoc);
 
-	  pwgl.modelViewMatrix = mat4.create(); 
-	  pwgl.projectionMatrix = mat4.create();
-	  pwgl.modelViewMatrixStack = [];
+//	  pwgl.modelViewMatrix = mat4.create(); 
+//	  pwgl.projectionMatrix = mat4.create();
+//	  pwgl.modelViewMatrixStack = [];
 }
 
 

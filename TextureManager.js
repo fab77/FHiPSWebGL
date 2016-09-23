@@ -9,7 +9,7 @@ function setupTextures(forceReload){
 var skyWorking = false;
 
 function addTextures(forceReload){
-	skyWorking = true;
+//	skyWorking = true;
 //	console.log("[addTextures]");
 	// fullZoom
 	if (fov >=50){
@@ -109,5 +109,5 @@ function textureFinishedLoading(image, texture, texunit){
     	console.log("error in texture");
     }
 	gl.bindTexture(gl.TEXTURE_2D, null);
-	
+//	skyWorking = false;
 }

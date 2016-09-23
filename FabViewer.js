@@ -487,10 +487,14 @@ function startup() {
 	gl = createGLContext(canvas);
 	updateVisiblePixels();
 	setupShaders();
+	pwgl.modelViewMatrix = mat4.create(); 
+	  pwgl.projectionMatrix = mat4.create();
+	  pwgl.modelViewMatrixStack = [];
 	setupBuffers();
 	setupTextures(true);
 	gl.clearColor(0.5,0.5,0.5, 1.0);
 	gl.enable(gl.DEPTH_TEST);
+
 	
 	
     mat4.identity(pwgl.skyRotationMatrix);
