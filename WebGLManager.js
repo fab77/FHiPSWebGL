@@ -37,8 +37,6 @@ function draw(){
 		addTextures();
     }
 	
-	
-	
 	gl.viewport(0, 0, gl.viewportWidth, gl.viewportHeight);
 	gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
 	
@@ -53,42 +51,32 @@ function draw(){
 	uploadProjectionMatrixToShader();
 	
 	
-	
-	
-	gl.uniform1f(pwgl.useTexturesUniformLoc, 1.0);
 	drawSkies();
-//	window.setTimeout(drawCatalogues,1000);
 	if (enableCatalogue){
-		setupShaders2();
+		useCatalogueGLProgram();
 		uploadModelViewMatrixToShader2();
 		uploadProjectionMatrixToShader2();
-//		gl.uniform1f(pwgl.useTexturesUniformLoc, 0.0);
 		drawCatalogues();	
 	}
-	setupShaders();
+	useHiPSGLProgram();
 	pwgl.requestId = requestAnimationFrame(draw);
 }
 
 
 function drawCatalogues(){
-//	if (enableCatalogue){
-//		gl.uniform1f(pwgl.useTexturesUniformLoc, 0.0);
-
 		gl.bindBuffer(gl.ARRAY_BUFFER, pwgl.vertexCataloguePositionBuffer);
-//		gl.bufferData(gl.ARRAY_BUFFER, vertices, gl.STATIC_DRAW);
 		gl.vertexAttribPointer(pwgl.vertexCatPositionAttributeLoc, 
 				pwgl.VERTEX_POS_CAT_BUF_ITEM_SIZE, 
 				gl.FLOAT, false, 0, 0);
 		gl.enableVertexAttribArray(pwgl.vertexCatPositionAttributeLoc);
 		gl.drawArrays(gl.POINTS, 0, pwgl.VERTEX_POS_CAT_BUF_NUM_ITEMS);
-	//console.log(pwgl.VERTEX_POS_CAT_BUF_NUM_ITEMS);		
-//	}
-
 }
 
+var max_iterations = 3;
+var iterations = 0;
+var debug = false;
+
 function drawSkies(){
-	
-	gl.uniform1f(pwgl.useTexturesUniformLoc, 1.0);
 	gl.bindBuffer(gl.ARRAY_BUFFER, pwgl.vertexPositionBuffer);
     gl.vertexAttribPointer(pwgl.vertexPositionAttributeLoc,
 			pwgl.VERTEX_POS_BUF_ITEM_SIZE, 
@@ -110,6 +98,11 @@ function drawSkies(){
     	
 	 	for (var j=0; j<pwgl.selectedSkies.length && j<8;j++){
 	 		sky = pwgl.selectedSkies[j];
+	 		
+	 		if (iterations < max_iterations && debug){
+	 			console.log(sky);
+	 			iterations += 1;
+	 		}
 	 		
 	 		gl.activeTexture(gl.TEXTURE0+j);
 			gl.bindTexture(gl.TEXTURE_2D, sky.textures.images[0]);

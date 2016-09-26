@@ -3,30 +3,44 @@
  */
 "use strict";
 
+function useCatalogueGLProgram(){
+	gl.useProgram(catalogueProgram);
+	  pwgl.catUniformMVMatrixLoc = gl.getUniformLocation(catalogueProgram, "uMVMatrix");
+	  pwgl.catUniformProjMatrixLoc = gl.getUniformLocation(catalogueProgram, "uPMatrix");
+	  
+	  pwgl.vertexCatPositionAttributeLoc = gl.getAttribLocation(catalogueProgram, 'aCatPosition');
+}
+
 function setupShaders2() {
 	  var vertexShader = loadShaderFromDOM("shader-vs-cat");
 	  var fragmentShader = loadShaderFromDOM("shader-fs-cat");
 	  
-	  shaderProgram = gl.createProgram();
-	  gl.attachShader(shaderProgram, vertexShader);
-	  gl.attachShader(shaderProgram, fragmentShader);
-	  gl.linkProgram(shaderProgram);
+	  catalogueProgram = gl.createProgram();
+	  gl.attachShader(catalogueProgram, vertexShader);
+	  gl.attachShader(catalogueProgram, fragmentShader);
+	  gl.linkProgram(catalogueProgram);
 
-	  if (!gl.getProgramParameter(shaderProgram, gl.LINK_STATUS) && !gl.isContextLost()) {
+	  if (!gl.getProgramParameter(catalogueProgram, gl.LINK_STATUS) && !gl.isContextLost()) {
 	    alert("Failed to setup shaders");
 	  }
-	  gl.useProgram(shaderProgram);
-	  pwgl.catUniformMVMatrixLoc = gl.getUniformLocation(shaderProgram, "uMVMatrix");
-	  pwgl.catUniformProjMatrixLoc = gl.getUniformLocation(shaderProgram, "uPMatrix");
-	  
-	  pwgl.vertexCatPositionAttributeLoc = gl.getAttribLocation(shaderProgram, 'aCatPosition');
-	  
-//	  gl.enableVertexAttribArray(pwgl.vertexPositionAttributeLoc);
-//	  gl.enableVertexAttribArray(pwgl.vertexTextureAttributeLoc);
+//	  gl.useProgram(catalogueProgram);
+//	  pwgl.catUniformMVMatrixLoc = gl.getUniformLocation(catalogueProgram, "uMVMatrix");
+//	  pwgl.catUniformProjMatrixLoc = gl.getUniformLocation(catalogueProgram, "uPMatrix");
+//	  
+//	  pwgl.vertexCatPositionAttributeLoc = gl.getAttribLocation(catalogueProgram, 'aCatPosition');
+}
 
-//	  pwgl.modelViewMatrix = mat4.create(); 
-//	  pwgl.projectionMatrix = mat4.create();
-//	  pwgl.modelViewMatrixStack = [];
+function useHiPSGLProgram(){
+	  gl.useProgram(shaderProgram);
+	  pwgl.vertexPositionAttributeLoc = gl.getAttribLocation(shaderProgram, "aVertexPosition"); 
+	  pwgl.vertexTextureAttributeLoc = gl.getAttribLocation(shaderProgram, "aTextureCoordinates");
+	  pwgl.uniformMVMatrixLoc = gl.getUniformLocation(shaderProgram, "uMVMatrix");
+	  pwgl.uniformProjMatrixLoc = gl.getUniformLocation(shaderProgram, "uPMatrix");
+
+	  for (var i=0; i<8; i++){
+		  pwgl.uniformSamplerLoc[i] = gl.getUniformLocation(shaderProgram, "uSampler"+i);
+		  pwgl.uniformVertexTextureFactorLoc[i] = gl.getUniformLocation(shaderProgram, "uFactor"+i);
+	  }
 }
 
 function setupShaders() {
@@ -47,11 +61,9 @@ function setupShaders() {
 	  pwgl.uniformMVMatrixLoc = gl.getUniformLocation(shaderProgram, "uMVMatrix");
 	  pwgl.uniformProjMatrixLoc = gl.getUniformLocation(shaderProgram, "uPMatrix");
 	  
-	  pwgl.useTexturesUniformLoc = gl.getUniformLocation(shaderProgram, "aUseTextures");
+//	  pwgl.useTexturesUniformLoc = gl.getUniformLocation(shaderProgram, "aUseTextures");
 //	  pwgl.vertexCatPositionAttributeLoc = gl.getAttribLocation(shaderProgram, 'aCatPosition');
 
-
-	  
 	  for (var i=0; i<8; i++){
 		  pwgl.uniformSamplerLoc[i] = gl.getUniformLocation(shaderProgram, "uSampler"+i);
 		  pwgl.uniformVertexTextureFactorLoc[i] = gl.getUniformLocation(shaderProgram, "uFactor"+i);
@@ -61,6 +73,8 @@ function setupShaders() {
 			  gl.uniform1f(pwgl.uniformVertexTextureFactorLoc[i], -99.0);
 		  }
 	  }
+	  
+	  
 
 	  
 //	  gl.enableVertexAttribArray(pwgl.vertexPositionAttributeLoc);

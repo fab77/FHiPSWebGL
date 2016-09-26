@@ -6,7 +6,7 @@ function setupTextures(forceReload){
 	addTextures(forceReload);
 }
 
-var skyWorking = false;
+//var skyWorking = false;
 
 function addTextures(forceReload){
 //	skyWorking = true;
@@ -14,17 +14,17 @@ function addTextures(forceReload){
 	// fullZoom
 	if (fov >=50){
 	 	if (fovInRange() && !forceReload){
-	 		skyWorking = false;
+//	 		skyWorking = false;
 			return;
 		}	 	
 	 	var sky;
 	 	for (var j=0; j<pwgl.selectedSkies.length && j<8;j++){
 	 		
 	 		sky = pwgl.selectedSkies[j];
+//	 		console.log(sky);
 	 		if (sky.textures.needsRefresh){
 	 			sky.textures.images[0] = gl.createTexture();
-		 		loadImageForTexture(sky.baseURL+"/Norder3/Allsky.jpg", sky.textures.images[0], j);	
-		 		
+		 		loadImageForTexture(sky.baseURL+"/Norder3/Allsky.jpg", sky.textures.images[0], j);
 		 		sky.textures.needsRefresh = false;
 	 		}
 	 		
@@ -72,7 +72,7 @@ function addTextures(forceReload){
 
 		}
 	}
-	skyWorking = false;
+//	skyWorking = false;
 }
 
 
@@ -86,6 +86,7 @@ function loadImageForTexture(url, texture, texunit){
 }
 
 function textureFinishedLoading(image, texture, texunit){	
+	console.log("TEXUNIT "+texunit);
 	gl.activeTexture(gl.TEXTURE0+texunit);
 	gl.bindTexture(gl.TEXTURE_2D, texture);
 	gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, true);

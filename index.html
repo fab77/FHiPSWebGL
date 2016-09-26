@@ -53,35 +53,35 @@
 <script id="shader-vs" type="x-shader/x-vertex">
 	attribute vec3 aVertexPosition;
 	attribute vec2 aTextureCoordinates;
-	uniform float aUseTextures;
+	//uniform float aUseTextures;
 
 
-	attribute vec4 aCatPosition;
+	//attribute vec4 aCatPosition;
  
 	uniform mat4 uMVMatrix;
 	uniform mat4 uPMatrix;
   
-	varying float vUseTextures;
+	//varying float vUseTextures;
 
   	varying vec2 vTextureCoordinates;
 
 	void main() {
-		if (aUseTextures == 1.0){
+		//if (aUseTextures == 1.0){
 			gl_Position = uPMatrix * uMVMatrix * vec4(aVertexPosition, 1.0);
 			vTextureCoordinates = aTextureCoordinates;
-			vUseTextures = 1.0;
-		}else{
-			gl_Position = uPMatrix * uMVMatrix * aCatPosition;
-			gl_PointSize = 3.0;
-			vUseTextures = 0.0;
-		}
+			//vUseTextures = 1.0;
+		//}else{
+		//	gl_Position = uPMatrix * uMVMatrix * aCatPosition;
+		//	gl_PointSize = 3.0;
+		//	vUseTextures = 0.0;
+		//}
 	}
 </script>
 
 <script id="shader-fs" type="x-shader/x-fragment">
   	precision mediump float;
   
-	varying float vUseTextures;
+	//varying float vUseTextures;
 
 	varying vec2 vTextureCoordinates;
 	uniform sampler2D uSampler0;
@@ -103,7 +103,7 @@
 
 
   	void main() {
-		if (vUseTextures == 1.0){
+		//if (vUseTextures == 1.0){
 			vec3 finalColor;
 			if (uFactor0 >= 0.0){
 				vec4 color0 = texture2D(uSampler0, vTextureCoordinates);
@@ -138,9 +138,9 @@
 				finalColor = vec3(finalColor.x +  color7.x*uFactor7,finalColor.y +  color7.y*uFactor7,finalColor.z +  color7.z*uFactor7);
 			}
 			gl_FragColor = vec4(finalColor, 1);		
-		}else{
-			gl_FragColor = vec4(0.0, 1.0, 0.0, 1.0);
-		}
+		//}else{
+		//	gl_FragColor = vec4(0.0, 1.0, 0.0, 1.0);
+		//}
   	} 
 </script>
 

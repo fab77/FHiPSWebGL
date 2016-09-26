@@ -28,6 +28,7 @@ var gl;
 var canvas;
  
 var shaderProgram;
+var catalogueProgram;
 var pwgl = {
 		"catalogues": [],
 		"pixels": [],
@@ -104,8 +105,10 @@ function addSky(skyidx){
 	var sky = pwgl.availableSkies[skyidx];
 	sky.textures.needsRefresh = true;
 	var shaderIndex = pwgl.selectedSkies.push(sky);
+//	console.log(sky);
 	addTextures(true);
 	console.log("-------End of AddSky-------");
+	debug=true;
 }
 
 function getPixNo(xyz){
@@ -486,10 +489,11 @@ function startup() {
 	
 	gl = createGLContext(canvas);
 	updateVisiblePixels();
+	setupShaders2();
 	setupShaders();
 	pwgl.modelViewMatrix = mat4.create(); 
-	  pwgl.projectionMatrix = mat4.create();
-	  pwgl.modelViewMatrixStack = [];
+	pwgl.projectionMatrix = mat4.create();
+	pwgl.modelViewMatrixStack = [];
 	setupBuffers();
 	setupTextures(true);
 	gl.clearColor(0.5,0.5,0.5, 1.0);
