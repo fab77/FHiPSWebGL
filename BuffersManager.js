@@ -118,6 +118,7 @@ function setupSkiesBuffers(){
 	var facesVec3Array;
 	var p = [];
 // 	var epsilon = 0.001;
+	
 	var epsilon = 0.0;
 	for (var i=0; i < nPixels; i++){
 		facesVec3Array = new Array();
@@ -138,6 +139,9 @@ function setupSkiesBuffers(){
 		vertexPosition[12*i+9] = facesVec3Array[3].x;
 		vertexPosition[12*i+10] = facesVec3Array[3].y ;
 		vertexPosition[12*i+11] = facesVec3Array[3].z;
+		
+		
+		
 		
 //		vertexPosition[12*i] = (facesVec3Array[0].x).toFixed(17) ;
 //		vertexPosition[12*i+1] = (facesVec3Array[0].y).toFixed(17) ;
@@ -166,6 +170,11 @@ function setupSkiesBuffers(){
 // 		vertexPosition[15*i+14] = p.z;
 
 	}
+	
+	
+	
+//	console.log("MAX X: "+maxx+" MAX Y: "+maxy+" MAX Z: "+maxz);
+	console.log(vertexPosition);
 	gl.bufferData(gl.ARRAY_BUFFER, vertexPosition, gl.STATIC_DRAW);
 	pwgl.VERTEX_POS_BUF_ITEM_SIZE = 3;
 	pwgl.VERTEX_POS_BUF_NUM_ITEMS = vertexPosition.length; 

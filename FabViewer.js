@@ -216,11 +216,12 @@ function refreshHealpix(){
 	}
 }
 
+var mouseMoveFactor = 1;
 
 function onMouseWheel(ev){
 	// WebKit
 	if ( ev.wheelDeltaY ) {
-		zoom -= ev.wheelDeltaY * 0.05;
+		zoom -= ev.wheelDeltaY * 0.05 ;
 	// Opera / Explorer 9
 	} else if ( ev.wheelDelta ) {
 		zoom -= ev.wheelDelta * 0.05;
@@ -231,6 +232,7 @@ function onMouseWheel(ev){
 	if (zoom<=1){
 		zoom = 1;
 	}
+	
 	oldFov = fov;
 	fov = 180/zoom;
 	fovDiv.innerHTML = "fov: "+fov+"<sup>&#8728;</sup>";
