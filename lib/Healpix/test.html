@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<script src="Xyf.js"></script>
+<script src="Vec3.js"></script>
+<script src="Pointing.js"></script> 
+<script src="Hploc.js"></script>
+<script src="Fxyf.js"></script>
+<script src="Healpix.js"></script> 
+<title>Insert title here</title>
+</head>
+<body>
+<script type="text/javascript">
+var norder = 5;
+var nside = Math.pow(2, norder);
+var healpix = new Healpix(nside);
+var p = new Pointing(0,0);
+var npix = healpix.ang2pix(p);
+console.log("NPIX:"+npix);
+
+
+
+
+</script>
+</body>
+</html>
