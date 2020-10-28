@@ -40,10 +40,22 @@ function draw(){
 	gl.viewport(0, 0, gl.viewportWidth, gl.viewportHeight);
 	gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
 	
+	// PERSPECTIVE
+//	var aspect = gl.viewportWidth  / gl.viewportHeight;
+//	var fieldOfViewRadians = 60 * Math.PI / 180;
+//	var projectionMatrix = mat4.perspective (fieldOfViewRadians , aspect, -10, 1000, pwgl.projectionMatrix);
+//	var cameraMatrix  = mat4.create();
+//	var viewMatrix = mat4.create();
+//	mat4.identity(cameraMatrix);
+//    mat4.translate(cameraMatrix, [0, 0, -2]);
+//    // Make a view matrix from the camera matrix
+//    mat4.inverse(cameraMatrix, viewMatrix);
+//    // Compute a view projection matrix
+//    mat4.multiply(projectionMatrix, viewMatrix, pwgl.modelViewMatrix);
+    
+	// ORTHO
 	mat4.ortho(-1-(-1+1/zoom), 1-(1-1/zoom), -1-(-1+1/zoom), 1-(1-1/zoom), -1, 1, pwgl.projectionMatrix);
-	
 	mat4.identity(pwgl.modelViewMatrix);
-
     mat4.multiply(pwgl.modelViewMatrix, pwgl.skyRotationMatrix);
 	
 	
